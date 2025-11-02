@@ -1,3 +1,5 @@
+// src/routes/index.js
+
 import express from "express";
 import indexRoutes from "./index.routes.js";
 import authRoutes from "./auth.routes.js";

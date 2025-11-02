@@ -1,4 +1,5 @@
 // src/routes/index.routes.js
+
 import express from "express";
 
 const router = express.Router();
