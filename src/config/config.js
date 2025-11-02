@@ -1,0 +1,95 @@
+// ./config/config.js
+
+// Load environment variables
+// import dotenv from "dotenv";
+// dotenv.config();
+
+const config = {
+  // Application info
+  app: {
+    name: process.env.APP_NAME || "MyNodeApp",
+    version: process.env.APP_VERSION || "1.0.0",
+    port: process.env.PORT || 5000,
+    baseUrl: process.env.BASE_URL || "http://localhost:5000",
+    env: process.env.NODE_ENV || "development", // development | production | staging
+  },
+
+  // Database configuration
+  db: {
+    uri: process.env.DB_URI || "mongodb://localhost:27017/myapp",
+    type: process.env.DB_TYPE || "mongodb", // mongodb | mysql | postgres
+    username: process.env.DB_USER || "",
+    password: process.env.DB_PASS || "",
+    host: process.env.DB_HOST || "localhost",
+    port: process.env.DB_PORT || 27017,
+    database: process.env.DB_NAME || "myapp",
+    poolSize: parseInt(process.env.DB_POOL_SIZE) || 5,
+  },
+
+  // JWT / Authentication
+  jwt: {
+    secret: process.env.JWT_SECRET || "supersecret",
+    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
+    refreshSecret: process.env.JWT_REFRESH_SECRET || "refreshsecret",
+    refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+  },
+
+  // Email / SMTP configuration
+  mail: {
+    host: process.env.SMTP_HOST || "smtp.mailtrap.io",
+    port: parseInt(process.env.SMTP_PORT) || 2525,
+    user: process.env.SMTP_USER || "",
+    pass: process.env.SMTP_PASS || "",
+    fromName: process.env.MAIL_FROM_NAME || "MyNodeApp",
+    fromEmail: process.env.MAIL_FROM_EMAIL || "noreply@example.com",
+  },
+
+  // Third-party APIs
+  api: {
+    baseUrl: process.env.API_BASE_URL || "https://api.example.com",
+    timeout: parseInt(process.env.API_TIMEOUT) || 5000, // ms
+    keys: {
+      googleMaps: process.env.GOOGLE_MAPS_API_KEY || "",
+      stripe: process.env.STRIPE_API_KEY || "",
+      awsS3: process.env.AWS_S3_KEY || "",
+    },
+  },
+
+  // Logging
+  logger: {
+    level: process.env.LOG_LEVEL || "info", // error | warn | info | debug
+    output: process.env.LOG_OUTPUT || "console", // console | file | remote
+    filePath: process.env.LOG_FILE_PATH || "./logs/app.log",
+  },
+
+  // Caching
+  cache: {
+    ttl: parseInt(process.env.CACHE_TTL) || 3600, // seconds
+    provider: process.env.CACHE_PROVIDER || "memory", // memory | redis
+    redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
+  },
+
+  // Features / feature flags
+  features: {
+    enableSignup: process.env.FEATURE_ENABLE_SIGNUP !== "false", // default true
+    enableDebugLogs: process.env.FEATURE_ENABLE_DEBUG !== "false", // default false
+    enableNotifications: process.env.FEATURE_ENABLE_NOTIFICATIONS !== "false",
+  },
+
+  // Security
+  security: {
+    corsOrigins: (process.env.CORS_ORIGINS || "*").split(","), // comma-separated
+    rateLimit: parseInt(process.env.RATE_LIMIT) || 100, // requests per window
+    rateLimitWindow: parseInt(process.env.RATE_LIMIT_WINDOW) || 15 * 60 * 1000, // 15 minutes
+    helmet: process.env.ENABLE_HELMET !== "false",
+  },
+
+  // File upload / storage
+  storage: {
+    localPath: process.env.STORAGE_LOCAL_PATH || "./uploads",
+    maxFileSize: parseInt(process.env.MAX_FILE_SIZE) || 5 * 1024 * 1024, // 5MB
+    allowedMimeTypes: (process.env.ALLOWED_MIME_TYPES || "image/jpeg,image/png,application/pdf").split(","),
+  },
+};
+
+export default config;
