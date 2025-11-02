@@ -2,19 +2,14 @@
 
 import express from "express";
 import allRoutes from "./routes/index.js";
+import { registerMiddlewares } from "./middlewares/index.js";
 
 const app = express();
 
-// Built-in middleware to parse JSON
-app.use(express.json());
+// Register all global middlewares (CORS, helmet, JSON parsing, logging, etc.)
+registerMiddlewares(app);
 
 // Mount all routes
 app.use(allRoutes);
-
-// Error handling middleware (catch errors)
-app.use((err, req, res, next) => {
-  console.error("Error:", err.stack);
-  res.status(500).json({ message: "Internal Server Error" });
-});
 
 export default app;

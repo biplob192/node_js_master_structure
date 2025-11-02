@@ -8,9 +8,6 @@ import config from "./config/config.js";
 import connectDB from "./config/db.js";
 import app from "./app.js";
 
-// Load environment variables
-// dotenv.config();
-
 // Connect to database
 connectDB();
 
@@ -20,21 +17,21 @@ connectDB();
 //   console.log(`Server running on http://localhost:${PORT}`);
 // });
 
-app.listen(config.app.port, () => {
-  console.log(`Server running at ${config.app.baseUrl}`);
-});
+// app.listen(config.app.port, () => {
+//   console.log(`Server running at ${config.app.baseUrl}`);
+// });
 
 // Use the following code instead to ensure DB connection before starting server:
-// const startServer = async () => {
-//   try {
-//     await connectDB(); // Wait for DB connection
-//     app.listen(config.app.port, () => {
-//       console.log(`Server running at ${config.app.baseUrl}`);
-//     });
-//   } catch (err) {
-//     console.error("Failed to start server:", err.message);
-//     process.exit(1);
-//   }
-// };
+const startServer = async () => {
+  try {
+    await connectDB(); // Wait for DB connection
+    app.listen(config.app.port, () => {
+      console.log(`Server running at ${config.app.baseUrl}`);
+    });
+  } catch (err) {
+    console.error("Failed to start server:", err.message);
+    process.exit(1);
+  }
+};
 
-// startServer();
+startServer();
