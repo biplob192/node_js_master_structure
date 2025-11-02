@@ -1,4 +1,4 @@
-// index.js (bootstrapper)
+// src/index.js (bootstrapper)
 
 // Load environment variables
 import dotenv from "dotenv";
