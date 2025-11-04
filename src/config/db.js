@@ -1,21 +1,25 @@
+// src/config/db.js
+
 // MongoDB (Mongoose)
-// import mongoose from "mongoose";
+import mongoose from "mongoose";
 
-// const connectDB = async () => {
-//   try {
-//     const conn = await mongoose.connect(process.env.MONGO_URI, {
-//       useNewUrlParser: true,
-//       useUnifiedTopology: true,
-//     });
+const connectDB = async () => {
+  try {
+    // const conn = await mongoose.connect(process.env.MONGO_URI, {
+    //   useNewUrlParser: true,
+    //   useUnifiedTopology: true,
+    // });
 
-//     console.log(`MongoDB Connected: ${conn.connection.host}`);
-//   } catch (error) {
-//     console.error("MongoDB Connection Failed:", error.message);
-//     process.exit(1); // Exit process with failure
-//   }
-// };
+    const conn = await mongoose.connect(process.env.MONGO_URI);
 
-// export default connectDB;
+    console.log(`MongoDB Connected: ${conn.connection.host} (Database: ${conn.connection.name})`);
+  } catch (error) {
+    console.error("MongoDB Connection Failed:", error.message);
+    process.exit(1); // Exit process with failure
+  }
+};
+
+export default connectDB;
 
 // ========================================================================
 // MySQL (Sequelize)
@@ -46,9 +50,9 @@
 
 // ========================================================================
 // In-Memory (for now)
-const connectDB = async () => {
-  console.log("Using in-memory database (no real DB connected).");
-};
+// const connectDB = async () => {
+//   console.log("Using in-memory database (no real DB connected).");
+// };
 
 // Alternative in-memory MongoDB connection (for testing or temporary environments)
 // -----------------------------------------------------------------------------
@@ -80,4 +84,4 @@ const connectDB = async () => {
 // };
 
 // Export the connection function
-export default connectDB;
+// export default connectDB;

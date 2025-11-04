@@ -27,5 +27,6 @@ export const registerMiddlewares = (app) => {
   // Later: you could register rate limiting, compression, etc.
 
   // Register error handler, catch all errors (should be the last one)
-  app.use(errorHandler);
+  // It should be registered in app.js after all routes
+  // app.use(errorHandler);
 };

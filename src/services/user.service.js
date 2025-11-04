@@ -1,7 +1,8 @@
 // src/services/user.service.js
 
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import User from "../models/user.model.js";
+import ApiError from "../utils/ApiError.js";
 
 export const registerUser = async (userData) => {
   const { name, email, password } = userData;
