@@ -4,7 +4,12 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 import User from "../models/user.model.js";
+import Session from "../models/session.model.js";
 import ApiError from "../utils/ApiError.js";
+
+// Example In-memory storage for user tokens
+// In production, consider using a database or persistent storage
+let userTokens = {}; // { userId: [token1, token2, ...] }
 
 // In-memory blacklist (you can persist this later)
 let tokenBlacklist = [];
@@ -53,7 +58,7 @@ export const registerUser = async (userData) => {
 // --------------------
 // LOGIN USER SERVICE
 // --------------------
-export const loginUser = async (data) => {
+export const loginUser = async (data, deviceInfo = "Unknown device") => {
   const { email, password } = data;
 
   const user = await User.findOne({ email });
@@ -62,7 +67,29 @@ export const loginUser = async (data) => {
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) throw new ApiError(401, "Invalid email or password");
 
+  // Invalidate old tokens (optional)
+  if (userTokens[user._id]) {
+    tokenBlacklist.push(...userTokens[user._id]);
+  }
+
+  // Generate new token
   const token = jwt.sign({ id: user._id, email: user.email }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+
+  // Calculate expiry time (JWT 'exp' claim এর সমান)
+  const decoded = jwt.decode(token);
+  const expiresAt = new Date(decoded.exp * 1000);
+
+  // Save this session
+  await Session.create({
+    userId: user._id,
+    token,
+    deviceInfo,
+    expiresAt,
+    valid: true,
+  });
+
+  // Save new token for that user
+  userTokens[user._id] = [token];
 
   return {
     token,
@@ -83,6 +110,33 @@ export const logoutUser = async (token) => {
   tokenBlacklist.push(token);
   return true;
 };
+
+// --------------------
+// LOGOUT CURRENT DEVICE SERVICE
+// --------------------
+export const logoutCurrentDeviceService = async (token) => {
+  if (!token) throw new ApiError(400, "Token is required");
+
+  const session = await Session.findOne({ token, valid: true });
+  if (!session) throw new ApiError(404, "Session not found or already logged out");
+
+  session.valid = false;
+  await session.save();
+
+  return { success: true, message: "Logged out from current device" };
+};
+
+
+export const logoutOtherDevices = async (userId, currentToken) => {
+  const sessions = await Session.updateMany(
+    { userId, token: { $ne: currentToken }, valid: true },
+    { $set: { valid: false } }
+  );
+
+  return { success: true, message: `${sessions.modifiedCount} other devices logged out` };
+};
+
+
 
 // --------------------
 // GET USER PROFILE SERVICE

@@ -1,7 +1,7 @@
 // src/controllers/user.controller.js
 
 import { registerValidation, loginValidation } from "../validations/user.validation.js";
-import { registerUser, loginUser, logoutUser } from "../services/user.service.js";
+import { registerUser, loginUser, logoutUser, logoutCurrentDeviceService } from "../services/user.service.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
@@ -80,6 +80,12 @@ export const logout = async (req, res, next) => {
 // };
 
 export const getProfile = async (req, res, next) => {
+  // const data = await getUserProfile(req.user.id, req.user.exp);
   const data = await getUserProfile(req.user.id);
   return ApiResponse.success(res, "Profile fetched", data);
+};
+
+export const logoutCurrentDevice = async (req, res, next) => {
+  const data = await logoutCurrentDeviceService(req.token);
+  return ApiResponse.success(res, data.message, null);
 };

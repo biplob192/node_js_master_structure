@@ -3,6 +3,7 @@
 import jwt from "jsonwebtoken";
 import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
+import Session from "../models/session.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isTokenBlacklisted } from "../services/user.service.js";
 
@@ -19,13 +20,24 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, "Token has been logged out");
   }
 
+  // Verify JWT Signature
   const decoded = jwt.verify(token, config.jwt.secret);
 
+  // Check if session exists and still valid
+  const session = await Session.findOne({ token, valid: true });
+  if (!session) {
+    throw new ApiError(401, "Session expired or logged out");
+  }
+
+  // Attach user info to request object
+  req.token = token; // Attach token for further use
+  req.tokenExp = decoded.exp; // Attach token expiry for further use
   req.user = {
     id: decoded.id,
     email: decoded.email,
-    exp: decoded.exp,
   };
+
+  // Proceed to next middleware/controller
   next();
 });
 
