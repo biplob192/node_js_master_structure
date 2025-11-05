@@ -87,18 +87,24 @@ export const logoutUser = async (token) => {
 // --------------------
 // GET USER PROFILE SERVICE
 // --------------------
-export const getUserProfile = async (userId, tokenExp) => {
+// export const getUserProfile = async (userId, tokenExp) => {
+//   const user = await User.findById(userId).select("-password");
+//   if (!user) {
+//     throw new ApiError(404, "User not found");
+//   }
+
+//   const tokenInfo = tokenExp
+//     ? {
+//         expiresAt: new Date(tokenExp * 1000),
+//         remainingSeconds: tokenExp - Math.floor(Date.now() / 1000),
+//       }
+//     : null;
+
+//   return { user, tokenInfo };
+// };
+
+export const getUserProfile = async (userId) => {
   const user = await User.findById(userId).select("-password");
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
-
-  const tokenInfo = tokenExp
-    ? {
-        expiresAt: new Date(tokenExp * 1000),
-        remainingSeconds: tokenExp - Math.floor(Date.now() / 1000),
-      }
-    : null;
-
-  return { user, tokenInfo };
+  if (!user) throw new ApiError(404, "User not found");
+  return user;
 };

@@ -2,8 +2,10 @@
 
 import { registerValidation, loginValidation } from "../validations/user.validation.js";
 import { registerUser, loginUser, logoutUser } from "../services/user.service.js";
+import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import { getUserProfile } from "../services/user.service.js";
 
 // REGISTER
 export const register = async (req, res, next) => {
@@ -64,4 +66,20 @@ export const logout = async (req, res, next) => {
   } catch (err) {
     next(err);
   }
+};
+
+// GET PROFILE
+// export const getProfile = async (req, res, next) => {
+//   const user = await User.findById(req.user.id).select("-password");
+
+//   if (!user) {
+//     throw new ApiError(404, "User not found");
+//   }
+
+//   return ApiResponse.success(res, "Profile fetched", user);
+// };
+
+export const getProfile = async (req, res, next) => {
+  const data = await getUserProfile(req.user.id);
+  return ApiResponse.success(res, "Profile fetched", data);
 };
