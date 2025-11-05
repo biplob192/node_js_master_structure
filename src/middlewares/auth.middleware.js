@@ -5,7 +5,7 @@ import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
 import { isTokenBlacklisted } from "../services/user.service.js";
 
-export const authMiddleware = (req, res, next) => {
+export const authMiddleware = async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -14,7 +14,7 @@ export const authMiddleware = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
 
-  if (isTokenBlacklisted(token)) {
+  if (await isTokenBlacklisted(token)) {
     throw new ApiError(401, "Token has been logged out");
   }
 

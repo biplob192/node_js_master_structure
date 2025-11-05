@@ -10,7 +10,12 @@ import ApiError from "../utils/ApiError.js";
 let tokenBlacklist = [];
 
 // HELPER — Check if token is blacklisted
-export const isTokenBlacklisted = (token) => tokenBlacklist.includes(token);
+// export const isTokenBlacklisted = (token) => tokenBlacklist.includes(token);
+
+export const isTokenBlacklisted = async (token) => {
+  // For the time being, fake async delay (future-proof)
+  return Promise.resolve(tokenBlacklist.includes(token));
+};
 
 // --------------------
 // REGISTER USER SERVICE
