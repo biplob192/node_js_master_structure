@@ -1,91 +1,13 @@
 // src/controllers/user.controller.js
 
-import { registerValidation, loginValidation } from "../validations/user.validation.js";
-import { registerUser, loginUser, logoutUser, logoutCurrentDeviceService } from "../services/user.service.js";
-import User from "../models/user.model.js";
-import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import { getUserProfile } from "../services/user.service.js";
 
-// REGISTER
-export const register = async (req, res, next) => {
-  try {
-    // Validate request body
-    const { error, value } = registerValidation.validate(req.body);
-    if (error) {
-      throw new ApiError(400, error.details[0].message);
-
-      // return res.status(400).json({
-      //   status: "fail",
-      //   message: error.details[0].message,
-      // });
-    }
-
-    // Perform registration logic
-    const user = await registerUser(value);
-
-    // Send success response
-    return ApiResponse.success(res, "User registered successfully", user, 201);
-
-    // res.status(201).json({
-    //   status: "success",
-    //   message: "User registered successfully",
-    //   data: user,
-    // });
-  } catch (err) {
-    next(err); // Let the global error handler deal with it
-  }
-};
-
-// LOGIN
-export const login = async (req, res, next) => {
-  try {
-    const { error, value } = loginValidation.validate(req.body);
-    if (error) throw new ApiError(400, error.details[0].message);
-
-    const result = await loginUser(value);
-
-    return ApiResponse.success(res, "Login successful", result, 200);
-  } catch (err) {
-    next(err);
-  }
-};
-
-// LOGOUT
-export const logout = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new ApiError(400, "No token provided");
-    }
-
-    const token = authHeader.split(" ")[1];
-    await logoutUser(token);
-
-    return ApiResponse.success(res, "Logout successful", null, 200);
-  } catch (err) {
-    next(err);
-  }
-};
-
 // GET PROFILE
-// export const getProfile = async (req, res, next) => {
-//   const user = await User.findById(req.user.id).select("-password");
-
-//   if (!user) {
-//     throw new ApiError(404, "User not found");
-//   }
-
-//   return ApiResponse.success(res, "Profile fetched", user);
-// };
-
 export const getProfile = async (req, res, next) => {
-  // const data = await getUserProfile(req.user.id, req.user.exp);
+  // Get user profile data from service
   const data = await getUserProfile(req.user.id);
-  return ApiResponse.success(res, "Profile fetched", data);
-};
 
-export const logoutCurrentDevice = async (req, res, next) => {
-  const data = await logoutCurrentDeviceService(req.token);
-  return ApiResponse.success(res, data.message, null);
+  // Return response
+  return ApiResponse.success(res, "Profile fetched", data);
 };

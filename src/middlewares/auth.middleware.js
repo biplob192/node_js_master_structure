@@ -5,7 +5,7 @@ import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
 import Session from "../models/session.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { isTokenBlacklisted } from "../services/user.service.js";
+import { isTokenBlacklisted } from "../services/auth.service.js";
 
 export const authMiddleware = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;

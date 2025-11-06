@@ -10,4 +10,4 @@ export default class ApiError extends Error {
 
 // Usage example in a controller:
 // import ApiError from "../utils/ApiError.js";
-// throw new ApiError(400, "Email already exists");
+// throw new ApiError(409, "Email already registered");
