@@ -64,10 +64,12 @@ export const loginUserService = async (data, deviceInfo = "Unknown device") => {
   if (!isPasswordValid) throw new ApiError(401, "Invalid email or password");
 
   // Generate token using helper
-  const { token, expiresIn } = await createToken(user, deviceInfo);
+  const { accessToken, refreshToken, expiresIn, refreshExpiresIn } = await createToken(user, deviceInfo);
 
   return {
-    token,
+    accessToken,
+    refreshToken,
+    refreshExpiresIn,
     expiresIn,
     user: {
       id: user._id,
@@ -114,52 +116,110 @@ export const logoutOtherDevicesService = async (currentToken) => {
 };
 
 // Common Token Generator + Session Saver
+// export const createToken = async (user, deviceInfo = "Unknown device") => {
+//   try {
+//     // Invalidate all existing sessions for this user
+//     // await Session.updateMany({ userId: user._id, valid: true }, { $set: { valid: false } });
+
+//     // Invalidate old sessions for this user & this specific device
+//     await Session.updateMany({ userId: user._id, deviceInfo, valid: true }, { $set: { valid: false } });
+
+//     // Optional: Invalidate old tokens by adding them to the blacklist
+//     // if (userTokens[user._id]) {
+//     //   tokenBlacklist.push(...userTokens[user._id]);
+//     // }
+
+//     // Optionally add previous tokens from this device to the blacklist
+//     if (userTokens[user._id]?.[deviceInfo]) {
+//       tokenBlacklist.push(...userTokens[user._id][deviceInfo]);
+//     }
+
+//     // Generate a new JWT token
+//     const token = jwt.sign({ id: user._id, email: user.email }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+
+//     // Decode token to calculate expiration time
+//     const decoded = jwt.decode(token);
+//     const expiresAt = new Date(decoded.exp * 1000);
+
+//     // Save the session to the database
+//     await Session.create({
+//       userId: user._id,
+//       token,
+//       deviceInfo,
+//       expiresAt,
+//       valid: true,
+//     });
+
+//     // Cache the new token for this user
+//     // userTokens[user._id] = [token];
+
+//     // Cache tokens per user per device
+//     if (!userTokens[user._id]) userTokens[user._id] = {};
+//     userTokens[user._id][deviceInfo] = [token];
+
+//     return {
+//       token,
+//       expiresIn: config.jwt.expiresIn,
+//     };
+//   } catch (err) {
+//     throw new ApiError(500, "Error generating token");
+//   }
+// };
+
+// Common Token Generator + Session Saver with Refresh Token
 export const createToken = async (user, deviceInfo = "Unknown device") => {
   try {
-    // Invalidate all existing sessions for this user
-    // await Session.updateMany({ userId: user._id, valid: true }, { $set: { valid: false } });
-
-    // Invalidate old sessions for this user & this specific device
+    // Invalidate old sessions for this user & device
     await Session.updateMany({ userId: user._id, deviceInfo, valid: true }, { $set: { valid: false } });
 
-    // Optional: Invalidate old tokens by adding them to the blacklist
-    // if (userTokens[user._id]) {
-    //   tokenBlacklist.push(...userTokens[user._id]);
-    // }
-
-    // Optionally add previous tokens from this device to the blacklist
+    // Blacklist old tokens for this device
     if (userTokens[user._id]?.[deviceInfo]) {
       tokenBlacklist.push(...userTokens[user._id][deviceInfo]);
     }
 
-    // Generate a new JWT token
-    const token = jwt.sign({ id: user._id, email: user.email }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+    // === Generate Tokens ===
+    const accessToken = jwt.sign(
+      { id: user._id, email: user.email, type: "access" },
+      config.jwt.secret,
+      { expiresIn: config.jwt.expiresIn } // e.g. "15m"
+    );
 
-    // Decode token to calculate expiration time
-    const decoded = jwt.decode(token);
-    const expiresAt = new Date(decoded.exp * 1000);
+    const refreshToken = jwt.sign(
+      { id: user._id, email: user.email, type: "refresh" },
+      config.jwt.refreshSecret,
+      { expiresIn: config.jwt.refreshExpiresIn } // e.g. "7d"
+    );
 
-    // Save the session to the database
+    // Decode tokens to get expiration timestamps
+    const decodedAccess  = jwt.decode(accessToken);
+    const decodedRefresh = jwt.decode(refreshToken);
+
+    const accessExpiresAt  = new Date(decodedAccess.exp * 1000);
+    const refreshExpiresAt = new Date(decodedRefresh.exp * 1000);
+
+    // === Save session in DB ===
     await Session.create({
       userId: user._id,
-      token,
       deviceInfo,
-      expiresAt,
+      accessToken,
+      refreshToken,
+      accessExpiresAt,
+      refreshExpiresAt,
       valid: true,
     });
 
-    // Cache the new token for this user
-    // userTokens[user._id] = [token];
-
-    // Cache tokens per user per device
+    // === Cache the new tokens ===
     if (!userTokens[user._id]) userTokens[user._id] = {};
-    userTokens[user._id][deviceInfo] = [token];
+    userTokens[user._id][deviceInfo] = [accessToken, refreshToken];
 
     return {
-      token,
+      accessToken,
+      refreshToken,
       expiresIn: config.jwt.expiresIn,
+      refreshExpiresIn: config.jwt.refreshExpiresIn,
     };
   } catch (err) {
-    throw new ApiError(500, "Error generating token");
+    console.error("Token creation failed:", err);
+    throw new ApiError(500, "Error generating tokens");
   }
 };

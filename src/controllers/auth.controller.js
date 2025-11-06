@@ -2,6 +2,10 @@
 
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
+import jwt from "jsonwebtoken";
+import config from "../config/config.js";
+import Session from "../models/session.model.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
 import { registerValidation, loginValidation } from "../validations/user.validation.js";
 import { registerUserService, loginUserService, logoutUserService, logoutOtherDevicesService } from "../services/auth.service.js";
 
@@ -62,3 +66,29 @@ export const logoutOtherDevices = async (req, res, next) => {
   // Send success response
   return ApiResponse.success(res, data.message, null);
 };
+
+// REFRESH ACCESS TOKEN
+export const refreshAccessToken = asyncHandler(async (req, res) => {
+  const { refresh_token } = req.body;
+  if (!refresh_token) throw new ApiError(400, "Missing refresh token");
+
+  // Verify refresh token
+  const decoded = jwt.verify(refresh_token, config.jwt.secret);
+
+  // Check if session exists and is valid
+  const session = await Session.findOne({ refreshToken: refresh_token, valid: true });
+  if (!session) throw new ApiError(401, "Invalid or expired session");
+
+  // Generate new access token
+  const newAccessToken = jwt.sign({ id: decoded.id, email: decoded.email, type: "access" }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+
+  // Update session record
+  session.token = newAccessToken;
+  session.expiresAt = new Date(jwt.decode(newAccessToken).exp * 1000);
+  await session.save();
+
+  res.json({
+    access_token: newAccessToken,
+    expires_in: config.jwt.expiresIn,
+  });
+});

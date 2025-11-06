@@ -32,7 +32,7 @@ const config = {
     // expiresIn: process.env.JWT_EXPIRES_IN || "1h",
     secret: process.env.JWT_SECRET || "supersecretkey123",
     expiresIn: "2880m", // 60 * 24 * 2 minutes = 2 days
-    refreshSecret: process.env.JWT_REFRESH_SECRET || "refreshsecret",
+    refreshSecret: process.env.JWT_REFRESH_SECRET || "refreshsecret123",
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   },
 
