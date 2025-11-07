@@ -28,22 +28,27 @@ const config = {
 
   // JWT / Authentication
   jwt: {
-    // secret: process.env.JWT_SECRET || "supersecret",
-    // expiresIn: process.env.JWT_EXPIRES_IN || "1h",
     secret: process.env.JWT_SECRET || "supersecretkey123",
-    expiresIn: "2880m", // 60 * 24 * 2 minutes = 2 days
+    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
     refreshSecret: process.env.JWT_REFRESH_SECRET || "refreshsecret123",
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   },
 
   // Email / SMTP configuration
   mail: {
-    host: process.env.SMTP_HOST || "smtp.mailtrap.io",
+    host: process.env.SMTP_HOST || "sandbox.smtp.mailtrap.io",
     port: parseInt(process.env.SMTP_PORT) || 2525,
-    user: process.env.SMTP_USER || "",
-    pass: process.env.SMTP_PASS || "",
+    user: process.env.SMTP_USER || "5ab82c11130611",
+    pass: process.env.SMTP_PASS || "db3b1a0be9cd3c",
     fromName: process.env.MAIL_FROM_NAME || "MyNodeApp",
     fromEmail: process.env.MAIL_FROM_EMAIL || "noreply@example.com",
+  },
+
+  // SMS / Twilio configuration
+  twilio: {
+    sid: process.env.TWILIO_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER,
   },
 
   // Third-party APIs

@@ -3,6 +3,8 @@
 import express from "express";
 import { requestLogger } from "./logger.middleware.js";
 import { errorHandler } from "./error.middleware.js";
+import { normalizeKeys } from "./normalizeKeys.middleware.js";
+import { snakeCaseResponse } from "./snakeCaseResponse.middleware.js";
 
 // Optionally, you can import body-parser, cors, helmet, morgan, etc.
 import cors from "cors";
@@ -23,6 +25,12 @@ export const registerMiddlewares = (app) => {
   // Body parsers
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
+
+  // Convert incoming request body keys to camelCase
+  app.use(normalizeKeys);
+
+  // Convert outgoing response keys to snake_case
+  // app.use(snakeCaseResponse);
 
   // Later: you could register rate limiting, compression, etc.
 

@@ -1,0 +1,109 @@
+// src/utils/otp.util.js
+
+import crypto from "crypto";
+import nodemailer from "nodemailer";
+import twilio from "twilio";
+import Otp from "../models/otp.model.js";
+import config from "../config/config.js";
+
+/**
+ * Generate a random OTP and store in DB
+ */
+export const generateOtp = async (userId, purpose = "verify_email") => {
+  const otp = crypto.randomInt(100000, 999999).toString();
+  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+
+  // Store or update existing OTP
+  await Otp.findOneAndUpdate({ userId, purpose }, { otp, expiresAt }, { upsert: true, new: true });
+
+  return otp;
+};
+
+/**
+ * Send OTP via Email
+ */
+export const sendEmailOtp_ = async (email, otp, purpose = "Account Verification") => {
+  const transporter = nodemailer.createTransport({
+    service: config.mail.service, // e.g., "gmail"
+    auth: {
+      user: config.mail.user,
+      pass: config.mail.pass,
+    },
+  });
+
+  const mailOptions = {
+    from: config.mail.from || config.mail.user,
+    to: email,
+    subject: `${purpose} OTP`,
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h3>${purpose}</h3>
+        <p>Your One-Time Password (OTP) is:</p>
+        <h2 style="color: #007bff;">${otp}</h2>
+        <p>This OTP will expire in 10 minutes.</p>
+      </div>
+    `,
+  };
+
+  await transporter.sendMail(mailOptions);
+  return true;
+};
+
+/**
+ * Send OTP via Email (Mailtrap configuration)
+ */
+export const sendEmailOtp = async (email, otp, purpose = "Account Verification") => {
+  // Create Mailtrap transporter
+  const transporter = nodemailer.createTransport({
+    host: config.mail.host, // sandbox.smtp.mailtrap.io
+    port: config.mail.port, // 2525
+    auth: {
+      user: config.mail.user,
+      pass: config.mail.pass,
+    },
+    logger: true,
+    debug: true,
+  });
+
+  // Email options
+  const mailOptions = {
+    from: config.mail.fromEmail,
+    to: email,
+    subject: `${purpose} - OTP Code`,
+    html: `
+      <div style="font-family: Arial, sans-serif; padding: 20px;">
+        <h3>${purpose}</h3>
+        <p>Hello,</p>
+        <p>Your One-Time Password (OTP) is:</p>
+        <h2 style="color:#007bff; letter-spacing:2px;">${otp}</h2>
+        <p>This code will expire in <b>10 minutes</b>.</p>
+        <br />
+        <p>If you did not request this, please ignore this email.</p>
+        <hr />
+        <p style="font-size:12px; color:#888;">MyApp © ${new Date().getFullYear()}</p>
+      </div>
+    `,
+  };
+
+  // Send the email
+  await transporter.sendMail(mailOptions);
+
+  console.log(`OTP email sent to ${email}`);
+  return true;
+};
+
+/**
+ * Send OTP via SMS
+ */
+export const sendSmsOtp = async (phoneNumber, otp, purpose = "Account Verification") => {
+  const client = twilio(config.twilio.sid, config.twilio.authToken);
+  const message = `Your OTP for ${purpose} is ${otp}. It expires in 10 minutes.`;
+
+  await client.messages.create({
+    body: message,
+    from: config.twilio.phoneNumber,
+    to: phoneNumber,
+  });
+
+  return true;
+};

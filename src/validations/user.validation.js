@@ -11,5 +11,15 @@ export const registerValidation = Joi.object({
 export const loginValidation = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
-  device_info: Joi.string().optional(),
+  // device_id: Joi.string().required(),
+  // device_info: Joi.string().optional(),
+  deviceId: Joi.string().required(),
+  deviceInfo: Joi.string().optional(),
+});
+
+export const verifyOtpValidation = Joi.object({
+  userId: Joi.string().required(),
+  otp: Joi.string().min(6).max(6).required(),
+  deviceId: Joi.string().required(),
+  deviceInfo: Joi.string().optional(),
 });

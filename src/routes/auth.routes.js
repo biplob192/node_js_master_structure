@@ -3,12 +3,13 @@
 import express from "express";
 import { wrapRoutes } from "../utils/wrapRoutes.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
-import { register, login, logout, logoutOtherDevices } from "../controllers/auth.controller.js";
+import { register, verifyOtp, login, logout, logoutOtherDevices } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
 // Sample full API endpoints for this router:
 // POST   /api/auth/register         - Register a new user
+// POST   /api/auth/verify-otp       - Verify OTP for user verification
 // POST   /api/auth/login            - Login user and get JWT
 // POST   /api/auth/logout           - Logout user (invalidate current token)
 // POST   /api/auth/logout-others    - Logout from other devices
@@ -18,6 +19,7 @@ const router = express.Router();
 // --------------------
 router.post("/register", register);
 router.post("/login", login);
+router.post("/verify-otp", verifyOtp);
 
 // --------------------
 // Protected routes (requires valid JWT)

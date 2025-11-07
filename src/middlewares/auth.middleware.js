@@ -16,11 +16,12 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
 
   const accessToken = authHeader.split(" ")[1];
 
+  // Check if token is blacklisted (for in memory token blacklist)
   if (await isTokenBlacklisted(accessToken)) {
     throw new ApiError(401, "Token has been logged out");
   }
 
-  // Verify JWT Signature
+  // Verify JWT Signature and decode
   const decoded = jwt.verify(accessToken, config.jwt.secret);
 
   // Check if session exists and still valid
