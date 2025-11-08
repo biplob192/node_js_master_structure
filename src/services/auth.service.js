@@ -73,10 +73,12 @@ export const verifyUserAndGenerateTokens = async (userId, deviceId, deviceInfo) 
 // --------------------
 // LOGIN USER SERVICE
 // --------------------
-export const loginUserService = async (data, deviceId, deviceInfo = "Unknown device") => {
-  const { email, password } = data;
+export const loginUserService = async (data) => {
+  const { email, password, deviceId } = data;
+  const deviceInfo = data.deviceInfo || "Unknown device";
 
-  const user = await User.findOne({ email });
+  const emailLower = email.trim().toLowerCase();
+  const user = await User.findOne({ email: emailLower });
   if (!user) throw new ApiError(401, "Invalid email or password");
 
   const isPasswordValid = await bcrypt.compare(password, user.password);

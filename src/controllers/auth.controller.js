@@ -50,14 +50,8 @@ export const login = async (req, res, next) => {
   const { error, value } = loginValidation.validate(req.body);
   if (error) throw new ApiError(400, error.details[0].message);
 
-  // If client sends "device_info" in the request body or headers, capture it
-  const deviceInfo = req.body.device_info || req.headers["device-info"] || "Unknown device";
-
-  // Capture device_id if provided (important for session management)
-  const deviceId = req.body.device_id || req.headers["device-id"];
-
   // Perform login logic
-  const result = await loginUserService(value, deviceId, deviceInfo);
+  const result = await loginUserService(value);
 
   // Send success response
   return ApiResponse.success(res, "Login successful", result, 200);
