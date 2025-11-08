@@ -53,30 +53,6 @@ export const register = async (req, res, next) => {
   }
 };
 
-export const verifyOtp = async (req, res, next) => {
-  // Validate request body and throw error if invalid
-  const { error, value } = verifyOtpValidation.validate(req.body);
-  if (error) {
-    throw new ApiError(400, error.details[0].message);
-  }
-
-  // Extract validated values
-  const { userId, otp, deviceId, deviceInfo } = value;
-
-  // Verify OTP only
-  await verifyOtpService(userId, otp);
-
-  // Delete OTPs
-  // await deleteUserOtps(userId);
-
-  // Mark user verified & generate tokens
-  // const result = await verifyUserAndGenerateTokens(userId, deviceId, deviceInfo);
-  const { user, formatedTokens } = await verifyUserAndGenerateTokens(userId, deviceId, deviceInfo);
-
-  // Send response
-  return ApiResponse.success(res, "User verified successfully", { user, ...formatedTokens });
-};
-
 // LOGIN
 export const login = async (req, res, next) => {
   // Validate request body
@@ -103,6 +79,58 @@ export const logout = async (req, res, next) => {
 
   // Send success response
   return ApiResponse.success(res, "Logged out successfully", null);
+};
+
+// VERIFY OTP
+export const verifyOtp = async (req, res, next) => {
+  // Validate request body and throw error if invalid
+  const { error, value } = verifyOtpValidation.validate(req.body);
+  if (error) {
+    throw new ApiError(400, error.details[0].message);
+  }
+
+  // Extract validated values
+  const { userId, otp, deviceId, deviceInfo } = value;
+
+  // Verify OTP only
+  await verifyOtpService(userId, otp);
+
+  // Delete OTPs
+  // await deleteUserOtps(userId);
+
+  // Mark user verified & generate tokens
+  // const result = await verifyUserAndGenerateTokens(userId, deviceId, deviceInfo);
+  const { user, formatedTokens } = await verifyUserAndGenerateTokens(userId, deviceId, deviceInfo);
+
+  // Send response
+  return ApiResponse.success(res, "User verified successfully", { user, ...formatedTokens });
+};
+
+// RESEND OTP
+export const resendOtp = async (req, res, next) => {
+  // Validate request body
+  const { userId } = req.body;
+
+  if (!userId) {
+    throw new ApiError(400, "User ID is required");
+  }
+
+  // Find the user
+  const user = await User.findById(userId);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+
+  // Generate new OTP
+  const otp = await generateOtp(user.id, "verify_email");
+
+  // Send OTP via email
+  await sendEmailOtp(user.email, otp, "Email Verification");
+
+  // Optionally send via SMS
+  // if (user.phone) await sendSmsOtp(user.phone, otp, "Phone Verification");
+
+  return ApiResponse.success(res, "A new OTP has been sent to your registered email.", { userId: user.id, email: user.email });
 };
 
 // LOGOUT OTHER DEVICE

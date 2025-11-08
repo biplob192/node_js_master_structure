@@ -51,6 +51,12 @@ const config = {
     phoneNumber: process.env.TWILIO_PHONE_NUMBER,
   },
 
+  // OTP configuration
+  otp: {
+    cooldownMs: parseInt(process.env.OTP_COOLDOWN_MS) || 2 * 60 * 1000, // default 2 minute
+    expiryMs: parseInt(process.env.OTP_EXPIRY_MS) || 10 * 60 * 1000, // default 10 minutes
+  },
+
   // Third-party APIs
   api: {
     baseUrl: process.env.API_BASE_URL || "https://api.example.com",

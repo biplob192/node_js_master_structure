@@ -10,8 +10,17 @@ import config from "../config/config.js";
  * Generate a random OTP and store in DB
  */
 export const generateOtp = async (userId, purpose = "verify_email") => {
+  // Before generating new OTP, check if an unexpired OTP exists
+  const existingOtp = await Otp.findOne({ userId, purpose });
+
+  // Use config.otp.cooldownMs here
+  if (existingOtp && existingOtp.expiresAt > new Date(Date.now() - config.otp.cooldownMs)) {
+    throw new ApiError(429, "Please wait before requesting another OTP");
+  }
+
+  // Generate a 6-digit OTP with expiry time from config
   const otp = crypto.randomInt(100000, 999999).toString();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 min expiry
+  const expiresAt = new Date(Date.now() + config.otp.expiryMs);
 
   // Store or update existing OTP
   await Otp.findOneAndUpdate({ userId, purpose }, { otp, expiresAt }, { upsert: true, new: true });
