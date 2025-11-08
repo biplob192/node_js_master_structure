@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
-import config from "../config/config";
-import ApiError from "../utils/ApiError";
-import Session from "../models/session.model";
+import config from "../config/config.js";
+import ApiError from "../utils/ApiError.js";
+import Session from "../models/session.model.js";
 
 export const refreshTokenMiddleware = async (req, res, next) => {
   try {

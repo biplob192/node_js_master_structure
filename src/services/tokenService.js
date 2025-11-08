@@ -1,5 +1,5 @@
 import jwt from "jsonwebtoken";
-import config from "../config";
+import config from "../config/config.js";
 
 export const generateAccessToken = (user) => {
   const accessToken = jwt.sign({ id: user.id, email: user.email, type: "access" }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
