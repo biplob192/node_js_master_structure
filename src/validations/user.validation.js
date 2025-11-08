@@ -23,3 +23,13 @@ export const verifyOtpValidation = Joi.object({
   deviceId: Joi.string().required(),
   deviceInfo: Joi.string().optional(),
 });
+
+export const verifyResendOtpValidation = Joi.object({
+  userId: Joi.string().optional(),
+  email: Joi.string().email().optional(),
+})
+  .or("userId", "email") // At least one must be present
+  .messages({
+    "object.missing": "Either userId or email must be provided",
+    "string.email": "Please provide a valid email address",
+  });

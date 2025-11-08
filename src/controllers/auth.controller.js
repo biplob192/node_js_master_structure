@@ -7,14 +7,15 @@ import ApiResponse from "../utils/ApiResponse.js";
 import Session from "../models/session.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { generateOtp, sendEmailOtp } from "../utils/otp.util.js";
-import { deleteUserOtps, verifyOtpService } from "../services/otp.service.js";
-import { registerValidation, loginValidation, verifyOtpValidation } from "../validations/user.validation.js";
+import { deleteUserOtps, verifyOtpService, sendOtpService } from "../services/otp.service.js";
+import { registerValidation, loginValidation, verifyOtpValidation, verifyResendOtpValidation } from "../validations/user.validation.js";
 import {
   registerUserService,
   verifyUserAndGenerateTokens,
   loginUserService,
   logoutUserService,
   logoutOtherDevicesService,
+  verifyUserService,
 } from "../services/auth.service.js";
 
 // --------------------
@@ -34,20 +35,11 @@ export const register = async (req, res, next) => {
     // Perform registration logic
     const user = await registerUserService(value);
 
-    // Generate OTP
-    const otp = await generateOtp(user.id, "verify_email");
-
-    // Send via email
-    await sendEmailOtp(user.email, otp, "Email Verification");
-
-    // Optionally send via SMS too
-    // if (user.phone) await sendSmsOtp(user.phone, otp, "Phone Verification");
+    // Call service to handle User validation, OTP generation, and sending
+    await sendOtpService({ userId: user.id });
 
     // Send response indicating OTP sent
     return ApiResponse.success(res, "OTP sent to your email for verification", user, 201);
-
-    // Send success response
-    // return ApiResponse.success(res, "User registered successfully", user, 201);
   } catch (err) {
     next(err); // Let the global error handler deal with it
   }
@@ -108,29 +100,17 @@ export const verifyOtp = async (req, res, next) => {
 
 // RESEND OTP
 export const resendOtp = async (req, res, next) => {
-  // Validate request body
-  const { userId } = req.body;
-
-  if (!userId) {
-    throw new ApiError(400, "User ID is required");
+  // Validate request body and throw error if invalid
+  const { error, value } = verifyResendOtpValidation.validate(req.body);
+  if (error) {
+    throw new ApiError(400, error.details[0].message);
   }
 
-  // Find the user
-  const user = await User.findById(userId);
-  if (!user) {
-    throw new ApiError(404, "User not found");
-  }
+  // Call service to handle User validation, OTP generation, and sending
+  const result = await sendOtpService(value);
 
-  // Generate new OTP
-  const otp = await generateOtp(user.id, "verify_email");
-
-  // Send OTP via email
-  await sendEmailOtp(user.email, otp, "Email Verification");
-
-  // Optionally send via SMS
-  // if (user.phone) await sendSmsOtp(user.phone, otp, "Phone Verification");
-
-  return ApiResponse.success(res, "A new OTP has been sent to your registered email.", { userId: user.id, email: user.email });
+  // Send response
+  return ApiResponse.success(res, "A new OTP has been sent to your registered email.", result);
 };
 
 // LOGOUT OTHER DEVICE

@@ -208,3 +208,20 @@ export const formatTokensToSnakeCase = (tokens) => {
     refresh_expires_in: tokens.refreshExpiresIn,
   };
 };
+
+export const verifyUserService = async (value) => {
+  // Destructure value to get email or userId
+  const { email, userId } = value;
+
+  // If userId not provided, find user by email
+  let user;
+  if (userId) {
+    user = await User.findById(userId);
+  } else if (email) {
+    user = await User.findOne({ email });
+  }
+
+  if (!user) throw new ApiError(404, "User not found");
+
+  return user;
+};
