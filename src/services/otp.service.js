@@ -1,6 +1,7 @@
 // src/services/otp.service.js
 
 import Otp from "../models/otp.model.js";
+import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
 import { verifyUserService } from "./auth.service.js";
 import { generateRandomOtp, sendEmailOtp } from "../utils/otp.util.js";

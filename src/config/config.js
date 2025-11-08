@@ -1,8 +1,8 @@
 // ./config/config.js
 
 // Load environment variables
-// import dotenv from "dotenv";
-// dotenv.config();
+import dotenv from "dotenv";
+dotenv.config();
 
 const config = {
   // Application info
@@ -29,7 +29,7 @@ const config = {
   // JWT / Authentication
   jwt: {
     secret: process.env.JWT_SECRET || "supersecretkey123",
-    expiresIn: process.env.JWT_EXPIRES_IN || "1h",
+    expiresIn: process.env.JWT_EXPIRES_IN || "6h",
     refreshSecret: process.env.JWT_REFRESH_SECRET || "refreshsecret123",
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
   },
