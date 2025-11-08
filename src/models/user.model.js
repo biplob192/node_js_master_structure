@@ -47,7 +47,7 @@ const userSchema = new mongoose.Schema(
 // Sensitive fields for this model
 const SENSITIVE_FIELDS = ["password"];
 
-// Apply the transform with sensitive fields removal
+// Apply the transform with sensitive fields removal, snake_case conversion, and id formatting
 userSchema.set("toJSON", { transform: createMongooseTransform(SENSITIVE_FIELDS) });
 
 const User = mongoose.model("User", userSchema);
