@@ -6,6 +6,7 @@ import config from "../config/config.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import Session from "../models/session.model.js";
+import { generateAccessToken, generateRefreshToken, isRefreshTokenNearExpiry, formatTokensToSnakeCase } from "./tokenService.js";
 
 // Example In-memory storage for user tokens
 // In production, consider using a database or persistent storage
@@ -194,21 +195,6 @@ export const createToken = async (user, deviceId, deviceInfo = "Unknown device")
   }
 };
 
-export const formatTokensToSnakeCase = (tokens) => {
-  // Validate tokens object
-  if (!tokens || !tokens.accessToken || !tokens.refreshToken || !tokens.expiresIn || !tokens.refreshExpiresIn) {
-    throw new ApiError(500, "Invalid tokens object");
-  }
-
-  // Format tokens in snake_case
-  return {
-    access_token: tokens.accessToken,
-    refresh_token: tokens.refreshToken,
-    expires_in: tokens.expiresIn,
-    refresh_expires_in: tokens.refreshExpiresIn,
-  };
-};
-
 export const verifyUserService = async (value) => {
   // Destructure value to get email or userId
   const { email, userId } = value;
@@ -225,3 +211,56 @@ export const verifyUserService = async (value) => {
 
   return user;
 };
+
+export const refreshTokenService = async (userId, refreshToken, rotateAllTokens = false) => {
+  // Check if session exists and is valid
+  const session = await Session.findOne({ userId, refreshToken, valid: true });
+  if (!session) throw new ApiError(401, "Invalid or expired session");
+
+  // Always generate new access token and update session with the token
+  const { accessToken, expiresAt } = generateAccessToken({ id: userId, email: session.email });
+  session.accessToken = accessToken;
+  session.accessExpiresAt = expiresAt;
+
+  // Rotate refresh token too, if requested or if it's close to expiry (e.g., less than 1 day left)
+  let newRefreshToken;
+  if (rotateAllTokens || isRefreshTokenNearExpiry(session)) {
+    const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email: session.email });
+    newRefreshToken = refreshToken;
+    session.refreshToken = refreshToken;
+    session.refreshExpiresAt = refreshExpiresAt;
+
+    // Console log for debugging or monitoring
+    console.log(`Rotated refresh token for user ${session.email}`);
+  }
+
+  // Save updated session
+  await session.save();
+
+  // Prepare response
+  const response = {
+    access_token: accessToken,
+    expires_in: config.jwt.expiresIn,
+  };
+
+  if (newRefreshToken) {
+    response.refresh_token = newRefreshToken;
+    response.refresh_expires_in = config.jwt.refreshExpiresIn;
+  }
+
+  return response;
+};
+
+// Invalidate all sessions for a user except the provided token
+// Not used currently, but can be useful for future features
+export const invalidateUserSessions = async (userId, excludeToken = null) => {
+  const filter = { userId, valid: true };
+  if (excludeToken) {
+    filter.accessToken = { $ne: excludeToken };
+  }
+  await Session.updateMany(filter, { $set: { valid: false } });
+};
+
+// --------------------
+// END OF FILE
+// --------------------

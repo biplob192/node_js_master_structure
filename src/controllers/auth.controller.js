@@ -6,8 +6,7 @@ import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
 import Session from "../models/session.model.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { generateOtp, sendEmailOtp } from "../utils/otp.util.js";
-import { deleteUserOtps, verifyOtpService, sendOtpService } from "../services/otp.service.js";
+import { deleteUserOtpsService, verifyOtpService, sendOtpService } from "../services/otp.service.js";
 import { registerValidation, loginValidation, verifyOtpValidation, verifyResendOtpValidation } from "../validations/user.validation.js";
 import {
   registerUserService,
@@ -15,7 +14,7 @@ import {
   loginUserService,
   logoutUserService,
   logoutOtherDevicesService,
-  verifyUserService,
+  refreshTokenService,
 } from "../services/auth.service.js";
 
 // --------------------
@@ -87,8 +86,8 @@ export const verifyOtp = async (req, res, next) => {
   // Verify OTP only
   await verifyOtpService(userId, otp);
 
-  // Delete OTPs
-  // await deleteUserOtps(userId);
+  // Delete all the OTPs for the user after successful verification
+  // await deleteUserOtpsService(userId);
 
   // Mark user verified & generate tokens
   // const result = await verifyUserAndGenerateTokens(userId, deviceId, deviceInfo);
@@ -107,7 +106,7 @@ export const resendOtp = async (req, res, next) => {
   }
 
   // Call service to handle User validation, OTP generation, and sending
-  const result = await sendOtpService(value);
+  const result = await sendOtpService({ userId: value.userId, email: value.email });
 
   // Send response
   return ApiResponse.success(res, "A new OTP has been sent to your registered email.", result);
@@ -122,28 +121,15 @@ export const logoutOtherDevices = async (req, res, next) => {
   return ApiResponse.success(res, data.message, null);
 };
 
-// REFRESH ACCESS TOKEN
-export const refreshAccessToken = asyncHandler(async (req, res) => {
-  const { refresh_token } = req.body;
-  if (!refresh_token) throw new ApiError(400, "Missing refresh token");
+// REFRESH TOKEN
+export const refreshToken = async (req, res, next) => {
+  const { rotateAllTokens } = req.body;
+  const userId = req.decodedRefreshToken.id;
+  const refreshToken = req.refreshToken;
 
-  // Verify refresh token
-  const decoded = jwt.verify(refresh_token, config.jwt.secret);
+  // Generate new tokens
+  const tokens = await refreshTokenService(userId, refreshToken, rotateAllTokens);
 
-  // Check if session exists and is valid
-  const session = await Session.findOne({ refreshToken: refresh_token, valid: true });
-  if (!session) throw new ApiError(401, "Invalid or expired session");
-
-  // Generate new access token
-  const newAccessToken = jwt.sign({ id: decoded.id, email: decoded.email, type: "access" }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
-
-  // Update session record
-  session.token = newAccessToken;
-  session.expiresAt = new Date(jwt.decode(newAccessToken).exp * 1000);
-  await session.save();
-
-  res.json({
-    access_token: newAccessToken,
-    expires_in: config.jwt.expiresIn,
-  });
-});
+  // Send success response
+  return ApiResponse.success(res, "Token refresh successful", tokens);
+};

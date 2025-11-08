@@ -6,57 +6,31 @@ import twilio from "twilio";
 import Otp from "../models/otp.model.js";
 import config from "../config/config.js";
 
+export const generateRandomOtp = () => {
+  return crypto.randomInt(100000, 999999).toString();
+};
+
 /**
  * Generate a random OTP and store in DB
  */
-export const generateOtp = async (userId, purpose = "verify_email") => {
-  // Before generating new OTP, check if an unexpired OTP exists
-  const existingOtp = await Otp.findOne({ userId, purpose });
+// export const generateOtp = async (userId, purpose = "verify_email") => {
+//   // Before generating new OTP, check if an unexpired OTP exists
+//   const existingOtp = await Otp.findOne({ userId, purpose });
 
-  // Use config.otp.cooldownMs here
-  if (existingOtp && existingOtp.expiresAt > new Date(Date.now() - config.otp.cooldownMs)) {
-    throw new ApiError(429, "Please wait before requesting another OTP");
-  }
+//   // Use config.otp.cooldownMs here
+//   if (existingOtp && existingOtp.expiresAt > new Date(Date.now() - config.otp.cooldownMs)) {
+//     throw new ApiError(429, "Please wait before requesting another OTP");
+//   }
 
-  // Generate a 6-digit OTP with expiry time from config
-  const otp = crypto.randomInt(100000, 999999).toString();
-  const expiresAt = new Date(Date.now() + config.otp.expiryMs);
+//   // Generate a 6-digit OTP with expiry time from config
+//   const otp = crypto.randomInt(100000, 999999).toString();
+//   const expiresAt = new Date(Date.now() + config.otp.expiryMs);
 
-  // Store or update existing OTP
-  await Otp.findOneAndUpdate({ userId, purpose }, { otp, expiresAt }, { upsert: true, new: true });
+//   // Store or update existing OTP
+//   await Otp.findOneAndUpdate({ userId, purpose }, { otp, expiresAt }, { upsert: true, new: true });
 
-  return otp;
-};
-
-/**
- * Send OTP via Email
- */
-export const sendEmailOtp_ = async (email, otp, purpose = "Account Verification") => {
-  const transporter = nodemailer.createTransport({
-    service: config.mail.service, // e.g., "gmail"
-    auth: {
-      user: config.mail.user,
-      pass: config.mail.pass,
-    },
-  });
-
-  const mailOptions = {
-    from: config.mail.from || config.mail.user,
-    to: email,
-    subject: `${purpose} OTP`,
-    html: `
-      <div style="font-family: Arial, sans-serif; padding: 20px;">
-        <h3>${purpose}</h3>
-        <p>Your One-Time Password (OTP) is:</p>
-        <h2 style="color: #007bff;">${otp}</h2>
-        <p>This OTP will expire in 10 minutes.</p>
-      </div>
-    `,
-  };
-
-  await transporter.sendMail(mailOptions);
-  return true;
-};
+//   return otp;
+// };
 
 /**
  * Send OTP via Email (Mailtrap configuration)
