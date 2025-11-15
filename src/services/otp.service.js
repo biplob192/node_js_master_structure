@@ -3,7 +3,7 @@
 import Otp from "../models/otp.model.js";
 import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
-import { verifyUserService } from "./auth.service.js";
+import { verifyUserExistenceService } from "./auth.service.js";
 import { generateRandomOtp, sendEmailOtp } from "../utils/otp.util.js";
 
 // Generate OTP Service
@@ -33,7 +33,7 @@ export const sendOtpService = async ({ userId, email, purpose = "verify_email", 
   }
 
   // Validate user existence
-  const user = await verifyUserService({ userId, email });
+  const user = await verifyUserExistenceService({ userId, email });
 
   // Generate new OTP for the user using the service
   const otp = await generateOtpService(user.id, "verify_email");

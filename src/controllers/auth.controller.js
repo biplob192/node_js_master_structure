@@ -10,7 +10,7 @@ import { deleteUserOtpsService, verifyOtpService, sendOtpService } from "../serv
 import { registerValidation, loginValidation, verifyOtpValidation, verifyResendOtpValidation } from "../validations/user.validation.js";
 import {
   registerUserService,
-  verifyUserAndGenerateTokens,
+  verifyUserAndGenerateTokenService,
   loginUserService,
   logoutUserService,
   logoutOtherDevicesService,
@@ -84,8 +84,8 @@ export const verifyOtp = async (req, res, next) => {
   // await deleteUserOtpsService(userId);
 
   // Mark user verified & generate tokens
-  // const result = await verifyUserAndGenerateTokens(userId, deviceId, deviceInfo);
-  const { user, formatedTokens } = await verifyUserAndGenerateTokens(userId, deviceId, deviceInfo);
+  // const result = await verifyUserAndGenerateTokenService(userId, deviceId, deviceInfo);
+  const { user, formatedTokens } = await verifyUserAndGenerateTokenService(userId, deviceId, deviceInfo);
 
   // Send response
   return ApiResponse.success(res, "User verified successfully", { user, ...formatedTokens });

@@ -56,7 +56,7 @@ export const registerUserService = async (userData) => {
 // --------------------
 // VERIFY USER AND GENERATE TOKENS SERVICE
 // --------------------
-export const verifyUserAndGenerateTokens = async (userId, deviceId, deviceInfo) => {
+export const verifyUserAndGenerateTokenService = async (userId, deviceId, deviceInfo) => {
   // Mark user as verified
   const user = await User.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
 
@@ -244,7 +244,7 @@ export const createToken = async (user, deviceId, deviceInfo = "Unknown device")
   }
 };
 
-export const verifyUserService = async (value) => {
+export const verifyUserExistenceService = async (value) => {
   // Destructure value to get email or userId
   const { email, userId } = value;
 
