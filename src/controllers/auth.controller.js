@@ -1,11 +1,7 @@
 // src/controllers/auth.controller.js
 
-import jwt from "jsonwebtoken";
-import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import Session from "../models/session.model.js";
-import { asyncHandler } from "../utils/asyncHandler.js";
 import { deleteUserOtpsService, verifyOtpService, sendOtpService } from "../services/otp.service.js";
 import { registerValidation, loginValidation, verifyOtpValidation, verifyResendOtpValidation } from "../validations/user.validation.js";
 import {
