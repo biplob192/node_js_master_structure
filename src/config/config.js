@@ -1,9 +1,5 @@
 // ./config/config.js
 
-// Load environment variables
-import dotenv from "dotenv";
-dotenv.config();
-
 const config = {
   // Application info
   app: {
