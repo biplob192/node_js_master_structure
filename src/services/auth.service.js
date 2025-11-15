@@ -137,7 +137,7 @@ export const logoutOtherDevicesService = async (currentToken) => {
 };
 
 // Common Token Generator + Session Saver with Refresh Token
-export const createToken = async (user, deviceId, deviceInfo = "Unknown device") => {
+export const createToken_ = async (user, deviceId, deviceInfo = "Unknown device") => {
   if (!deviceId) throw new ApiError(400, "Device ID is required");
 
   try {
@@ -185,6 +185,53 @@ export const createToken = async (user, deviceId, deviceInfo = "Unknown device")
     if (!userTokens[user._id]) userTokens[user._id] = {};
     userTokens[user._id][deviceId] = [accessToken, refreshToken];
 
+    return {
+      accessToken,
+      refreshToken,
+      expiresIn: config.jwt.expiresIn,
+      refreshExpiresIn: config.jwt.refreshExpiresIn,
+    };
+  } catch (err) {
+    console.error("Token creation failed:", err);
+    throw new ApiError(500, "Error generating tokens");
+  }
+};
+
+export const createToken = async (user, deviceId, deviceInfo = "Unknown device") => {
+  if (!deviceId) throw new ApiError(400, "Device ID is required");
+
+  // Extract user details
+  const userId = user._id;
+  const email = user.email;
+
+  try {
+    // Invalidate old sessions & blacklist old tokens
+    await Session.updateMany({ userId, deviceId, valid: true }, { $set: { valid: false } });
+    if (userTokens[userId]?.[deviceId]) {
+      tokenBlacklist.push(...userTokens[userId][deviceId]);
+    }
+
+    // Generate new tokens
+    const { accessToken, expiresAt: accessExpiresAt } = generateAccessToken({ id: userId, email });
+    const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email });
+
+    // Create session in DB with new tokens
+    await Session.create({
+      userId,
+      deviceId,
+      deviceInfo,
+      accessToken,
+      refreshToken,
+      accessExpiresAt,
+      refreshExpiresAt,
+      valid: true,
+    });
+
+    // Cache the new tokens for this device and user
+    userTokens[userId] = userTokens[userId] || {};
+    userTokens[userId][deviceId] = [accessToken, refreshToken];
+
+    // Return tokens + expiry info
     return {
       accessToken,
       refreshToken,
