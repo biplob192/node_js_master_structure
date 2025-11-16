@@ -42,19 +42,19 @@ MIT
 ## Dependencies
 
 - **Node.js:** For server
-- Express: As a web framework
-- MongoDB: For database
-- Mongoose: As an Object Data Modeling (ODM) library
-- dotenv: For environment variables
-- Bcryptjs: For password hashing
-- Jsonwebtoken: For generating and verifying JWT tokens
-- Joi: For input validation
-- Nodemon: For live reloading
-- Compression: For gzip compression
-- Helmet: For security headers
-- CookieParser: For parsing cookies
-- Cors: For enabling CORS
-- HttpErrors: For HTTP errors
-- Faker: For generating fake data
-- Minimist: For parsing CLI arguments
-- Morgan: For logging HTTP requests
+- **Express:** As a web framework
+- **MongoDB:** For database
+- **Mongoose:** As an Object Data Modeling (ODM) library
+- **dotenv:** For environment variables
+- **Bcryptjs:** For password hashing
+- **Jsonwebtoken:** For generating and verifying JWT tokens
+- **Joi:** For input validation
+- **Nodemon:** For live reloading
+- **Compression:** For gzip compression
+- **Helmet:** For security headers
+- **CookieParser:** For parsing cookies
+- **Cors:** For enabling CORS
+- **HttpErrors:** For HTTP errors
+- **Faker:** For generating fake data
+- **Minimist:** For parsing CLI arguments
+- **Morgan:** For logging HTTP requests
