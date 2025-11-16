@@ -21,7 +21,7 @@ npm run dev
 
 ## License
 
-MIT
+This project is licensed under the MIT. Anyone can use it for free. You don't need to ask permission.
 
 ## Features
 
