@@ -41,7 +41,7 @@ MIT
 
 ## Dependencies
 
-- Node.js: For server
+- **Node.js:** For server
 - Express: As a web framework
 - MongoDB: For database
 - Mongoose: As an Object Data Modeling (ODM) library
