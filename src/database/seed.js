@@ -14,14 +14,24 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Parse CLI arguments
-const argv = minimist(process.argv.slice(2), { boolean: ["clean"], default: { clean: false } });
+const argv = minimist(process.argv.slice(2), {
+  boolean: ["clean", "force"],
+  default: { clean: false, force: false },
+});
 const className = argv.class || null; // null = run all seeders
 const count = argv.count ? parseInt(argv.count) : 10;
 const clean = !!argv.clean;
-console.log("ARGV:", argv);
+// console.log("ARGV:", argv);
 
 async function runSeeder() {
   try {
+    // Prevent seeding in production unless forced
+    if (process.env.NODE_ENV !== "development" && !argv.force) {
+      console.error("Seeding is disabled! NODE_ENV is not 'development'. Use --force to override.");
+      console.error("Current ENV:", process.env.NODE_ENV);
+      process.exit(1);
+    }
+
     // Connect to DB if not already connected
     if (mongoose.connection.readyState === 0) {
       console.log("No active DB connection. Connecting...");
@@ -29,33 +39,6 @@ async function runSeeder() {
     } else {
       console.log("DB connection already active. Skipping connectDB().");
     }
-
-    // let SeederClass;
-    // if (className) {
-    //   // Run a specific seeder
-    //   // Path: src/database/seeders/UserSeeder.js
-    //   const seederPath = path.join(__dirname, "seeders", `${className}.js`);
-
-    //   // Convert to file:// URL for Windows compatibility
-    //   const SeederModule = await import(pathToFileURL(seederPath).href);
-    //   SeederClass = SeederModule.default || SeederModule[className];
-
-    //   if (!SeederClass) {
-    //     throw new Error(`Seeder class "${className}" not found in: ${seederPath}`);
-    //   }
-    // } else {
-    //   // Run all seeders via DatabaseSeeder
-    //   // Path: src/database/seeders/DatabaseSeeder.js
-    //   const seederPath = path.join(__dirname, "seeders", "DatabaseSeeder.js");
-
-    //   // Convert to file:// URL for Windows compatibility
-    //   const SeederModule = await import(pathToFileURL(seederPath).href);
-    //   SeederClass = SeederModule.default;
-
-    //   if (!SeederClass) {
-    //     throw new Error(`DatabaseSeeder class not found in: ${seederPath}`);
-    //   }
-    // }
 
     // Decide which seeder to run
     const seederFile = className ? `${className}.js` : "DatabaseSeeder.js";

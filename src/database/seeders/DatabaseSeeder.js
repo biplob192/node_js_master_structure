@@ -29,13 +29,13 @@ export default class DatabaseSeeder {
       const SeederClass = module.default || module[className];
 
       if (!SeederClass) {
-        console.log(`⚠ Seeder not found in file: ${file}`);
+        console.log(`Seeder not found in file: ${file}`);
         continue;
       }
 
       const seeder = new SeederClass(this.options);
 
-      console.log(`➡ Running: ${file}`);
+      console.log(`=> Running: ${file}`);
       await seeder.run();
     }
   }
