@@ -1,10 +1,6 @@
 # About Project
 
-This is a simple Node.js project try to maintain best codeing practices to create a project starter. It uses the following tech stack:
-
-- Node.js
-- Express
-- MongoDB
+This project is a clean and scalable Node.js starter template built with best coding practices in mind. It provides a solid foundation for backend applications using Express and MongoDB, featuring robust authentication, request validation, security enhancements, and convenient development tooling. Designed to be easy to extend and maintain, it serves as a reliable starting point for modern server-side applications.
 
 ## Installation
 
