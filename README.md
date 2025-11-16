@@ -4,11 +4,16 @@ This project is a clean and scalable Node.js starter template built with best co
 
 ## Installation
 
+### Clone the repository
+```bash
+git clone https://github.com/biplob192/node_js_master_structure
+```
+### Install dependencies
 ```bash
 npm install
 ```
 
-## Usage
+### Run the development server
 
 ```bash
 npm run dev
