@@ -28,9 +28,10 @@ This project is licensed under the MIT. Anyone can use it for free. You don't ne
 ### Authentication and Authorization
 
 - User registration
-- User verification
-- User login
-- User logout
+- User verification (email)
+- User login (multiple devices)
+- User logout (current device)
+- User logout (other devices)
 - User profile
 - User password reset
 - User password change
@@ -39,6 +40,7 @@ This project is licensed under the MIT. Anyone can use it for free. You don't ne
 - Refresh tokens for long-term authentication
 - Automatic token rotation for security and efficiency
 - Seeders for database initialization and data population
+- Role-based access control (RBAC) for fine-grained permissions
 
 ## Dependencies
 
