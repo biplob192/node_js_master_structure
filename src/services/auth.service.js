@@ -6,7 +6,7 @@ import config from "../config/config.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import Session from "../models/session.model.js";
-import { withTransaction } from "../utils/runTransaction.js";
+import { withTransaction } from "../utils/databaseTransaction.js";
 import { generateAccessToken, generateRefreshToken, isRefreshTokenNearExpiry, formatTokensToSnakeCase } from "./tokenService.js";
 
 // Example In-memory storage for user tokens
