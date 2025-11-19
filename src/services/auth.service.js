@@ -6,6 +6,7 @@ import config from "../config/config.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import Session from "../models/session.model.js";
+import { withTransaction } from "../utils/runTransaction.js";
 import { generateAccessToken, generateRefreshToken, isRefreshTokenNearExpiry, formatTokensToSnakeCase } from "./tokenService.js";
 
 // Example In-memory storage for user tokens
@@ -73,32 +74,59 @@ export const verifyUserAndGenerateTokenService = async (userId, deviceId, device
 // --------------------
 // LOGIN USER SERVICE
 // --------------------
-export const loginUserService = async (data) => {
-  const { email, password, deviceId } = data;
-  const deviceInfo = data.deviceInfo || "Unknown device";
+// export const loginUserService = async (data) => {
+//   const { email, password, deviceId } = data;
+//   const deviceInfo = data.deviceInfo || "Unknown device";
+
+//   const emailLower = email.trim().toLowerCase();
+//   const user = await User.findOne({ email: emailLower });
+//   if (!user) throw new ApiError(401, "Invalid email or password");
+
+//   const isPasswordValid = await bcrypt.compare(password, user.password);
+//   if (!isPasswordValid) throw new ApiError(401, "Invalid email or password");
+
+//   // Generate token using helper
+//   const { accessToken, refreshToken, expiresIn, refreshExpiresIn } = await createToken(user, deviceId, deviceInfo);
+
+//   return {
+//     access_token: accessToken,
+//     refresh_token: refreshToken,
+//     expires_in: expiresIn,
+//     refresh_expires_in: refreshExpiresIn,
+//     user: {
+//       id: user._id,
+//       name: user.name,
+//       email: user.email,
+//     },
+//   };
+// };
+
+export const loginUserService = withTransaction(async (data, session) => {
+  const { email, password, deviceId, deviceInfo = "Unknown device" } = data;
 
   const emailLower = email.trim().toLowerCase();
-  const user = await User.findOne({ email: emailLower });
+  const user = await User.findOne({ email: emailLower }).session(session);
+
   if (!user) throw new ApiError(401, "Invalid email or password");
 
   const isPasswordValid = await bcrypt.compare(password, user.password);
   if (!isPasswordValid) throw new ApiError(401, "Invalid email or password");
 
-  // Generate token using helper
-  const { accessToken, refreshToken, expiresIn, refreshExpiresIn } = await createToken(user, deviceId, deviceInfo);
+  // Generate tokens — uses same session
+  const tokens = await createToken({ user, deviceId, deviceInfo }, session);
 
   return {
-    access_token: accessToken,
-    refresh_token: refreshToken,
-    expires_in: expiresIn,
-    refresh_expires_in: refreshExpiresIn,
+    access_token: tokens.accessToken,
+    refresh_token: tokens.refreshToken,
+    expires_in: tokens.expiresIn,
+    refresh_expires_in: tokens.refreshExpiresIn,
     user: {
       id: user._id,
       name: user.name,
       email: user.email,
     },
   };
-};
+});
 
 // --------------------
 // LOGOUT USER SERVICE
@@ -112,29 +140,59 @@ export const logoutUserService = async (token) => {
 // --------------------
 // LOGOUT OTHER DEVICES SERVICE
 // --------------------
-export const logoutOtherDevicesService = async (currentToken) => {
-  try {
-    // Verify and decode the current token
-    const decoded = jwt.verify(currentToken, config.jwt.secret);
-    const userId = decoded.id;
+// export const logoutOtherDevicesService = async (currentToken) => {
+//   try {
+//     // Verify and decode the current token
+//     const decoded = jwt.verify(currentToken, config.jwt.secret);
+//     const userId = decoded.id;
 
-    // Find the current valid session
-    const currentSession = await Session.findOne({ userId, accessToken: currentToken, valid: true });
-    if (!currentSession) {
-      throw new ApiError(401, "Invalid or expired session");
-    }
+//     // Find the current valid session
+//     const currentSession = await Session.findOne({ userId, accessToken: currentToken, valid: true });
+//     if (!currentSession) {
+//       throw new ApiError(401, "Invalid or expired session");
+//     }
 
-    // Invalidate all other sessions for this user except the current one
-    await Session.updateMany({ userId, accessToken: { $ne: currentToken }, valid: true }, { $set: { valid: false } });
+//     // Invalidate all other sessions for this user except the current one
+//     await Session.updateMany({ userId, accessToken: { $ne: currentToken }, valid: true }, { $set: { valid: false } });
 
-    return { message: "Logged out from all other devices successfully" };
-  } catch (err) {
-    if (err.name === "JsonWebTokenError") {
-      throw new ApiError(401, "Invalid token");
-    }
-    throw err;
+//     return { message: "Logged out from all other devices successfully" };
+//   } catch (err) {
+//     if (err.name === "JsonWebTokenError") {
+//       throw new ApiError(401, "Invalid token");
+//     }
+//     throw err;
+//   }
+// };
+
+export const logoutOtherDevicesService = withTransaction(async (data, session) => {
+  const { currentToken } = data;
+
+  // Verify and decode the current token
+  const decoded = jwt.verify(currentToken, config.jwt.secret);
+  const userId = decoded.id;
+
+  // Find current session
+  const currentSession = await Session.findOne({ userId, accessToken: currentToken, valid: true });
+
+  if (!currentSession) {
+    throw new ApiError(401, "Invalid or expired session");
   }
-};
+
+  // Invalidate all other sessions
+  const result = await Session.updateMany(
+    {
+      userId,
+      accessToken: { $ne: currentToken },
+      valid: true,
+    },
+    { $set: { valid: false } }
+  ).session(session);
+
+  return {
+    message: "Logged out from all other devices successfully",
+    modified: result.modifiedCount,
+  };
+});
 
 // Common Token Generator + Session Saver with Refresh Token
 export const createToken_ = async (user, deviceId, deviceInfo = "Unknown device") => {
@@ -197,52 +255,102 @@ export const createToken_ = async (user, deviceId, deviceInfo = "Unknown device"
   }
 };
 
-export const createToken = async (user, deviceId, deviceInfo = "Unknown device") => {
+// export const createToken = async (user, deviceId, deviceInfo = "Unknown device") => {
+//   if (!deviceId) throw new ApiError(400, "Device ID is required");
+
+//   // Extract user details
+//   const userId = user._id;
+//   const email = user.email;
+
+//   try {
+//     // Invalidate old sessions & blacklist old tokens
+//     await Session.updateMany({ userId, deviceId, valid: true }, { $set: { valid: false } });
+//     if (userTokens[userId]?.[deviceId]) {
+//       tokenBlacklist.push(...userTokens[userId][deviceId]);
+//     }
+
+//     // Generate new tokens
+//     const { accessToken, expiresAt: accessExpiresAt } = generateAccessToken({ id: userId, email });
+//     const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email });
+
+//     // Create session in DB with new tokens
+//     await Session.create({
+//       userId,
+//       deviceId,
+//       deviceInfo,
+//       accessToken,
+//       refreshToken,
+//       accessExpiresAt,
+//       refreshExpiresAt,
+//       valid: true,
+//     });
+
+//     // Cache the new tokens for this device and user
+//     userTokens[userId] = userTokens[userId] || {};
+//     userTokens[userId][deviceId] = [accessToken, refreshToken];
+
+//     // Return tokens + expiry info
+//     return {
+//       accessToken,
+//       refreshToken,
+//       expiresIn: config.jwt.expiresIn,
+//       refreshExpiresIn: config.jwt.refreshExpiresIn,
+//     };
+//   } catch (err) {
+//     console.error("Token creation failed:", err);
+//     throw new ApiError(500, "Error generating tokens");
+//   }
+// };
+
+export const createToken = withTransaction(async (data, session) => {
+  const { user, deviceId, deviceInfo = "Unknown device" } = data;
+
   if (!deviceId) throw new ApiError(400, "Device ID is required");
 
   // Extract user details
   const userId = user._id;
   const email = user.email;
 
-  try {
-    // Invalidate old sessions & blacklist old tokens
-    await Session.updateMany({ userId, deviceId, valid: true }, { $set: { valid: false } });
-    if (userTokens[userId]?.[deviceId]) {
-      tokenBlacklist.push(...userTokens[userId][deviceId]);
-    }
+  // Invalidate previous tokens
+  await Session.updateMany({ userId, deviceId, valid: true }, { $set: { valid: false } }).session(session);
 
-    // Generate new tokens
-    const { accessToken, expiresAt: accessExpiresAt } = generateAccessToken({ id: userId, email });
-    const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email });
-
-    // Create session in DB with new tokens
-    await Session.create({
-      userId,
-      deviceId,
-      deviceInfo,
-      accessToken,
-      refreshToken,
-      accessExpiresAt,
-      refreshExpiresAt,
-      valid: true,
-    });
-
-    // Cache the new tokens for this device and user
-    userTokens[userId] = userTokens[userId] || {};
-    userTokens[userId][deviceId] = [accessToken, refreshToken];
-
-    // Return tokens + expiry info
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: config.jwt.expiresIn,
-      refreshExpiresIn: config.jwt.refreshExpiresIn,
-    };
-  } catch (err) {
-    console.error("Token creation failed:", err);
-    throw new ApiError(500, "Error generating tokens");
+  if (userTokens[userId]?.[deviceId]) {
+    tokenBlacklist.push(...userTokens[userId][deviceId]);
   }
-};
+
+  // Generate new tokens
+  const { accessToken, expiresAt: accessExpiresAt } = generateAccessToken({ id: userId, email });
+
+  const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email });
+
+  // Save session
+  await Session.create(
+    [
+      {
+        userId,
+        deviceId,
+        deviceInfo,
+        accessToken,
+        refreshToken,
+        accessExpiresAt,
+        refreshExpiresAt,
+        valid: true,
+      },
+    ],
+    { session }
+  );
+
+  // Cache tokens
+  userTokens[userId] = userTokens[userId] || {};
+  userTokens[userId][deviceId] = [accessToken, refreshToken];
+
+  return {
+    accessToken,
+    refreshToken,
+    expiresIn: config.jwt.expiresIn,
+    refreshExpiresIn: config.jwt.refreshExpiresIn,
+  };
+});
 
 export const verifyUserExistenceService = async (value) => {
   // Destructure value to get email or userId
