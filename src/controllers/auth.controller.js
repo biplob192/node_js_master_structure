@@ -2,10 +2,10 @@
 
 import ApiError from "../utils/ApiError.js";
 import ApiResponse from "../utils/ApiResponse.js";
-import { deleteUserOtpsService, verifyOtpService, sendOtpService } from "../services/otp.service.js";
-import { registerValidation, loginValidation, verifyOtpValidation, verifyResendOtpValidation } from "../validations/user.validation.js";
+import { deleteUserOtpsService, verifyOtpService, generateAndSendOtpService } from "../services/otp.service.js";
+import { registerValidation, loginValidation, verifyOtpValidation, verifySendOtpValidation } from "../validations/user.validation.js";
 import {
-  registerUserService,
+  registerUserWithOtpService,
   verifyUserAndGenerateTokenService,
   loginUserService,
   logoutUserService,
@@ -27,11 +27,8 @@ export const register = async (req, res, next) => {
       throw new ApiError(400, error.details[0].message);
     }
 
-    // Perform registration logic
-    const user = await registerUserService(value);
-
-    // Call service to handle User validation, OTP generation, and sending
-    await sendOtpService({ userId: user.id });
+    // Call service to handle User registration, validation, OTP generation, and sending
+    const user = await registerUserWithOtpService(value);
 
     // Send response indicating OTP sent
     return ApiResponse.success(res, "OTP sent to your email for verification", user, 201);
@@ -77,7 +74,7 @@ export const verifyOtp = async (req, res, next) => {
   await verifyOtpService(userId, otp);
 
   // Delete all the OTPs for the user after successful verification
-  // await deleteUserOtpsService(userId);
+  await deleteUserOtpsService(userId);
 
   // Mark user verified & generate tokens
   // const result = await verifyUserAndGenerateTokenService(userId, deviceId, deviceInfo);
@@ -87,19 +84,19 @@ export const verifyOtp = async (req, res, next) => {
   return ApiResponse.success(res, "User verified successfully", { user, ...formatedTokens });
 };
 
-// RESEND OTP
-export const resendOtp = async (req, res, next) => {
+// SEND/RESEND OTP
+export const sendOtp = async (req, res, next) => {
   // Validate request body and throw error if invalid
-  const { error, value } = verifyResendOtpValidation.validate(req.body);
+  const { error, value } = verifySendOtpValidation.validate(req.body);
   if (error) {
     throw new ApiError(400, error.details[0].message);
   }
 
   // Call service to handle User validation, OTP generation, and sending
-  const result = await sendOtpService({ userId: value.userId, email: value.email });
+  await generateAndSendOtpService({ userId: value.userId, email: value.email });
 
   // Send response
-  return ApiResponse.success(res, "A new OTP has been sent to your registered email.", result);
+  return ApiResponse.success(res, "A new OTP has been sent to your registered email.");
 };
 
 // LOGOUT OTHER DEVICE

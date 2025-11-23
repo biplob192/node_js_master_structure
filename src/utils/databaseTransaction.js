@@ -51,6 +51,14 @@ export const withTransaction = (serviceFn) => {
     }
 
     // Case 3 — session is provided, use existing transaction
-    return await serviceFn(payload, session);
+    if (session && typeof session.startTransaction === "function") {
+      return await serviceFn(payload, session);
+    }
+
+    // If session is invalid or unexpected:
+    throw new Error("Invalid session passed to withTransaction");
+
+    // Case 3 — session is provided, use existing transaction
+    // return await serviceFn(payload, session);
   };
 };

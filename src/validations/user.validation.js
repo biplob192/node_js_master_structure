@@ -24,7 +24,7 @@ export const verifyOtpValidation = Joi.object({
   deviceInfo: Joi.string().optional(),
 });
 
-export const verifyResendOtpValidation = Joi.object({
+export const verifySendOtpValidation = Joi.object({
   userId: Joi.string().optional(),
   email: Joi.string().email().optional(),
 })

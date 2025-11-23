@@ -4,7 +4,7 @@ import express from "express";
 import { wrapRoutes } from "../utils/wrapRoutes.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 import { refreshTokenMiddleware } from "../middlewares/refreshToken.middleware.js";
-import { register, login, logout, verifyOtp, resendOtp, logoutOtherDevices, refreshToken } from "../controllers/auth.controller.js";
+import { register, login, logout, verifyOtp, sendOtp, logoutOtherDevices, refreshToken } from "../controllers/auth.controller.js";
 
 const router = express.Router();
 
@@ -14,15 +14,15 @@ const router = express.Router();
 // POST   /api/auth/login            - Login user and get JWT
 // POST   /api/auth/logout           - Logout user (invalidate current token)
 // POST   /api/auth/logout-others    - Logout from other devices
-// POST   /api/auth/resend-otp       - Resend OTP to user
+// POST   /api/auth/send-otp       - Send OTP to user
 
 // --------------------
 // Public routes
 // --------------------
 router.post("/register", register);
 router.post("/login", login);
+router.post("/send-otp", sendOtp);
 router.post("/verify-otp", verifyOtp);
-router.post("/resend-otp", resendOtp);
 router.post("/refresh-token", refreshTokenMiddleware, refreshToken);
 
 // --------------------

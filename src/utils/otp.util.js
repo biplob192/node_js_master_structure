@@ -35,7 +35,10 @@ export const generateRandomOtp = () => {
 /**
  * Send OTP via Email (Mailtrap configuration)
  */
-export const sendEmailOtp = async (email, otp, purpose = "Account Verification") => {
+export const sendOtpEmailService = async (data) => {
+  // Destructure data to get email, otp and purpose email, otp, purpose = "Account Verification"
+  const { email, otp, purpose = "verify_email" } = data;
+  
   // Create Mailtrap transporter
   const transporter = nodemailer.createTransport({
     host: config.mail.host, // sandbox.smtp.mailtrap.io
@@ -78,7 +81,10 @@ export const sendEmailOtp = async (email, otp, purpose = "Account Verification")
 /**
  * Send OTP via SMS
  */
-export const sendSmsOtp = async (phoneNumber, otp, purpose = "Account Verification") => {
+export const sendOtpSmsService = async (data) => {
+  // Destructure data to get phoneNumber, otp and purpose
+  const { phoneNumber, otp, purpose = "verify_phone" } = data;
+  
   const client = twilio(config.twilio.sid, config.twilio.authToken);
   const message = `Your OTP for ${purpose} is ${otp}. It expires in 10 minutes.`;
 

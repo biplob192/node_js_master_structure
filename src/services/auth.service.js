@@ -6,6 +6,8 @@ import config from "../config/config.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import Session from "../models/session.model.js";
+import { sendOtpEmailService } from "../utils/otp.util.js";
+import { generateOtpService, sendOtpService } from "./otp.service.js";
 import { withTransaction } from "../utils/databaseTransaction.js";
 import { generateAccessToken, generateRefreshToken, isRefreshTokenNearExpiry, formatTokensToSnakeCase } from "./tokenService.js";
 
@@ -24,14 +26,30 @@ export const isTokenBlacklisted = async (token) => {
   return Promise.resolve(tokenBlacklist.includes(token));
 };
 
+// ----------------------------
+// REGISTER USER WITH OTP SERVICE
+// ----------------------------
+export const registerUserWithOtpService = withTransaction(async (data, session) => {
+  // Step 1: Create User (uses same transaction)
+  const user = await registerUserService(data, session);
+
+  // Step 2: Create + Save OTP for that user (same transaction)
+  const otp = await generateOtpService({ userId: user.id || user._id }, session);
+
+  // Step 3: Send the OTP email (outside DB transaction — safe)
+  await sendOtpService({ user, otp });
+
+  return user;
+});
+
 // --------------------
 // REGISTER USER SERVICE
 // --------------------
-export const registerUserService = async (userData) => {
-  const { name, email, password } = userData;
+export const registerUserService = withTransaction(async (data, session) => {
+  const { name, email, password } = data;
 
   // Check if user already exists
-  const existingUser = await User.findOne({ email });
+  const existingUser = await User.findOne({ email }).session(session);
   if (existingUser) {
     throw new ApiError(409, "Email already registered");
   }
@@ -40,19 +58,18 @@ export const registerUserService = async (userData) => {
   const hashedPassword = await bcrypt.hash(password, 10);
 
   // Create user
-  const user = await User.create({
-    name,
-    email,
-    password: hashedPassword,
-    isVerified: false,
-  });
-
-  return {
-    id: user._id,
-    name: user.name,
-    email: user.email,
-  };
-};
+  return await User.create(
+    [
+      {
+        name,
+        email,
+        password: hashedPassword,
+        isVerified: false,
+      },
+    ],
+    { session }
+  ).then((result) => result[0]);
+});
 
 // --------------------
 // VERIFY USER AND GENERATE TOKENS SERVICE
@@ -62,7 +79,7 @@ export const verifyUserAndGenerateTokenService = async (userId, deviceId, device
   const user = await User.findByIdAndUpdate(userId, { isVerified: true }, { new: true });
 
   // Generate tokens
-  const tokens = await createToken(user, deviceId, deviceInfo);
+  const tokens = await createToken({ user, deviceId, deviceInfo });
 
   // Format tokens in snake_case for API response
   const formatedTokens = formatTokensToSnakeCase(tokens);
@@ -102,7 +119,12 @@ export const verifyUserAndGenerateTokenService = async (userId, deviceId, device
 // };
 
 export const loginUserService = withTransaction(async (data, session) => {
-  const { email, password, deviceId, deviceInfo = "Unknown device" } = data;
+  const { email, password, deviceId, deviceInfo = "Unknown device", disableTransaction } = data;
+
+  if (disableTransaction === true && session) {
+    // Restart service WITHOUT transaction
+    return await loginUserService(data, false);
+  }
 
   const emailLower = email.trim().toLowerCase();
   const user = await User.findOne({ email: emailLower }).session(session);
@@ -352,9 +374,14 @@ export const createToken = withTransaction(async (data, session) => {
   };
 });
 
-export const verifyUserExistenceService = async (value) => {
-  // Destructure value to get email or userId
-  const { email, userId } = value;
+export const verifyUserExistenceService = async (data) => {
+  // Destructure data to get email or userId
+  const { userId, email } = data;
+
+  // Check if userId or email is provided
+  if (!userId && !email) {
+    throw new ApiError(400, "Either userId or email must be provided");
+  }
 
   // If userId not provided, find user by email
   let user;
