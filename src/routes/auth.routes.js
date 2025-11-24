@@ -14,7 +14,7 @@ const router = express.Router();
 // POST   /api/auth/login            - Login user and get JWT
 // POST   /api/auth/logout           - Logout user (invalidate current token)
 // POST   /api/auth/logout-others    - Logout from other devices
-// POST   /api/auth/send-otp       - Send OTP to user
+// POST   /api/auth/send-otp         - Send OTP to user
 
 // --------------------
 // Public routes

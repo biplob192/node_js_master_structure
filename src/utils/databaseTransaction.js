@@ -38,27 +38,45 @@ export const runTransaction = async (callback) => {
 
 export const withTransaction = (serviceFn) => {
   return async (payload, session = undefined) => {
-    // Case 1 — explicitly disable transaction
-    if (session === false) {
+    // CASE 1:
+    // session === false  => disable transaction
+    // session === null   => explicitly no transaction
+    if (session === false || session === null) {
+      console.log("Session is false");
+
       return await serviceFn(payload, null);
     }
 
-    // Case 2 — no session passed, so create a new transaction
-    if (!session) {
+    // CASE 2: no session provided => create a new transaction
+    if (typeof session === "undefined") {
+      console.log("Session is undefined");
       return await runTransaction(async (trx) => {
         return await serviceFn(payload, trx);
       });
     }
 
-    // Case 3 — session is provided, use existing transaction
+    // CASE 3: session is a valid mongoose session => reuse it
     if (session && typeof session.startTransaction === "function") {
+      console.log("Session is defined");
       return await serviceFn(payload, session);
     }
 
-    // If session is invalid or unexpected:
+    // CASE 4: invalid session provided
     throw new Error("Invalid session passed to withTransaction");
-
-    // Case 3 — session is provided, use existing transaction
-    // return await serviceFn(payload, session);
   };
+
+  // Do NOT use `if (!session)` here.
+  // It treats ALL falsy values the same, which breaks transaction logic:
+  //
+  // Value        | !session | Problem
+  // ----------------------------------------------
+  // undefined    | true     | OK — means "no session passed"
+  // null         | true     | WRONG — we want null to mean "no transaction"
+  // false        | true     | WRONG — false explicitly disables transactions
+  // 0            | true     | Wrong (rare but still incorrect)
+  // ""           | true     | Wrong
+  // {}           | false    | Not falsy but also NOT a valid session
+  //
+  // Always use `typeof session === "undefined"`
+  // to detect ONLY the case where no session was passed.
 };

@@ -45,6 +45,38 @@ export const registerUserWithOtpService = withTransaction(async (data, session) 
 // --------------------
 // REGISTER USER SERVICE
 // --------------------
+// export const registerUserService = async (data, session) => {
+//   const { name, email, password } = data;
+
+//   // Check if user already exists
+//   const existingUser = await User.findOne({ email }).session(session);
+//   if (existingUser) {
+//     throw new ApiError(409, "Email already registered");
+//   }
+
+//   // Hash password
+//   const hashedPassword = await bcrypt.hash(password, 10);
+
+//   // Create user
+//   // const opts = session ? { session } : {};
+//   const opts = session ? session : {};
+
+//   // Add detailed session-type debugging
+//   console.log("Session Object:", session);
+
+//   return await User.create(
+//     [
+//       {
+//         name,
+//         email,
+//         password: hashedPassword,
+//         isVerified: false,
+//       },
+//     ],
+//     { session }
+//   ).then((result) => result[0]);
+// };
+
 export const registerUserService = withTransaction(async (data, session) => {
   const { name, email, password } = data;
 
