@@ -8,6 +8,8 @@ import { decryptToken } from "../utils/tokenCrypto.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { isTokenBlacklisted } from "../services/auth.service.js";
 
+// This middleware is for protected routes that require authentication.
+// It verifies the encrypted JWT token and checks if the session is still valid.
 export const authMiddleware = asyncHandler(async (req, res, next) => {
   const authHeader = req.headers.authorization;
 
@@ -50,6 +52,7 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
   next();
 });
 
+// It verifies the raw JWT token and checks if the session is still valid.
 // export const authMiddleware = asyncHandler(async (req, res, next) => {
 //   const authHeader = req.headers.authorization;
 
