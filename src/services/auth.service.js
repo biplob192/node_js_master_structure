@@ -436,6 +436,24 @@ export const verifyUserExistenceService = async (data) => {
   return user;
 };
 
+export const refreshTokenWithEncryptionService = async (userId, rawRefreshToken, rotateAllTokens = false) => {
+  // STEP 1 — call existing service to generate new raw tokens
+  const tokens = await refreshTokenService(userId, rawRefreshToken, rotateAllTokens);
+
+  // STEP 2 — encrypt tokens before sending to controller
+  const encryptedResponse = {
+    access_token: encryptToken(tokens.access_token),
+    expires_in: tokens.expires_in,
+  };
+
+  if (tokens.refresh_token) {
+    encryptedResponse.refresh_token = encryptToken(tokens.refresh_token);
+    encryptedResponse.refresh_expires_in = tokens.refresh_expires_in;
+  }
+
+  return encryptedResponse;
+};
+
 export const refreshTokenService = async (userId, refreshToken, rotateAllTokens = false) => {
   // Check if session exists and is valid
   const session = await Session.findOne({ userId, refreshToken, valid: true });

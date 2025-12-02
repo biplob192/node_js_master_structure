@@ -10,7 +10,7 @@ import {
   loginUserService,
   logoutUserService,
   logoutOtherDevicesService,
-  refreshTokenService,
+  refreshTokenWithEncryptionService,
 } from "../services/auth.service.js";
 
 // --------------------
@@ -115,7 +115,7 @@ export const refreshToken = async (req, res, next) => {
   const refreshToken = req.refreshToken;
 
   // Generate new tokens
-  const tokens = await refreshTokenService(userId, refreshToken, rotateAllTokens);
+  const tokens = await refreshTokenWithEncryptionService(userId, refreshToken, rotateAllTokens);
 
   // Send success response
   return ApiResponse.success(res, "Token refresh successful", tokens);
