@@ -28,6 +28,8 @@ const config = {
     expiresIn: process.env.JWT_EXPIRES_IN || "6h",
     refreshSecret: process.env.JWT_REFRESH_SECRET || "refreshsecret123",
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
+    encryptionKey: process.env.JWT_ENCRYPTION_KEY || "937b6d59e3951a07bb0aa9b80a676ebddf4b85d9d5b04d1ded4492c66dae880e",
+    // Generate encryption key: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   },
 
   // Email / SMTP configuration

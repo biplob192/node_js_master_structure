@@ -6,6 +6,7 @@ import config from "../config/config.js";
 import User from "../models/user.model.js";
 import ApiError from "../utils/ApiError.js";
 import Session from "../models/session.model.js";
+import { encryptToken } from "../utils/tokenCrypto.js";
 import { sendOtpEmailService } from "../utils/otp.util.js";
 import { generateOtpService, sendOtpService } from "./otp.service.js";
 import { withTransaction } from "../utils/databaseTransaction.js";
@@ -37,7 +38,8 @@ export const registerUserWithOtpService = withTransaction(async (data, session) 
   const otp = await generateOtpService({ userId: user.id || user._id }, session);
 
   // Step 3: Send the OTP email (outside DB transaction — safe)
-  await sendOtpService({ user, otp });
+  // Enable this if you want to send the OTP via email
+  // await sendOtpService({ user, otp });
 
   return user;
 });
@@ -372,12 +374,16 @@ export const createToken = withTransaction(async (data, session) => {
     tokenBlacklist.push(...userTokens[userId][deviceId]);
   }
 
-  // Generate new tokens
+  // Generate new tokens (raw JWTs)
   const { accessToken, expiresAt: accessExpiresAt } = generateAccessToken({ id: userId, email });
-
   const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email });
 
+  // Encrypt tokens before sending to client
+  const encryptedAccess = encryptToken(accessToken);
+  const encryptedRefresh = encryptToken(refreshToken);
+
   // Save session
+  // Save raw tokens in DB (NOT encrypted)
   await Session.create(
     [
       {
@@ -399,8 +405,10 @@ export const createToken = withTransaction(async (data, session) => {
   userTokens[userId][deviceId] = [accessToken, refreshToken];
 
   return {
-    accessToken,
-    refreshToken,
+    // accessToken,
+    // refreshToken,
+    accessToken: encryptedAccess,
+    refreshToken: encryptedRefresh,
     expiresIn: config.jwt.expiresIn,
     refreshExpiresIn: config.jwt.refreshExpiresIn,
   };
