@@ -30,6 +30,18 @@ const config = {
     refreshExpiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "7d",
     encryptionKey: process.env.JWT_ENCRYPTION_KEY || "937b6d59e3951a07bb0aa9b80a676ebddf4b85d9d5b04d1ded4492c66dae880e",
     // Generate encryption key: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+
+    // MULTIPLE encryption keys (for rotation)
+    encryptionKeys: {
+      // Key ID : Hex key
+      v1: process.env.JWT_ENC_KEY_V1 || "937b6d59e3951a07bb0aa9b80a676ebddf4b85d9d5b04d1ded4492c66dae880e",
+      v2: process.env.JWT_ENC_KEY_V1 || "0de70d7d08974bd3e435e16ffd28b9510833552ddb6f3ad887332455df6e8bd2",
+      // Add new rotated key here later:
+      // "v3": process.env.JWT_ENC_KEY_V3,
+    },
+
+    // Active key used to encrypt new tokens
+    currentEncryptionKeyId: process.env.JWT_CURRENT_ENC_KEY_ID || "v1",
   },
 
   // Email / SMTP configuration

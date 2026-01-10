@@ -1,20 +1,23 @@
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import config from "../config/config.js";
 
 export const generateAccessToken = (user) => {
-  const accessToken = jwt.sign({ id: user.id, email: user.email, type: "access" }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
+  const jti = crypto.randomUUID();
+  const accessToken = jwt.sign({ id: user.id, email: user.email, jti, type: "access" }, config.jwt.secret, { expiresIn: config.jwt.expiresIn });
 
   const decoded = jwt.decode(accessToken);
-  return { accessToken, expiresAt: new Date(decoded.exp * 1000) };
+  return { accessToken, accessJti: jti, expiresAt: new Date(decoded.exp * 1000) };
 };
 
 export const generateRefreshToken = (user) => {
-  const refreshToken = jwt.sign({ id: user.id, email: user.email, type: "refresh" }, config.jwt.refreshSecret, {
+  const jti = crypto.randomUUID();
+  const refreshToken = jwt.sign({ id: user.id, email: user.email, jti, type: "refresh" }, config.jwt.refreshSecret, {
     expiresIn: config.jwt.refreshExpiresIn,
   });
 
   const decoded = jwt.decode(refreshToken);
-  return { refreshToken, refreshExpiresAt: new Date(decoded.exp * 1000) };
+  return { refreshToken, jti, refreshExpiresAt: new Date(decoded.exp * 1000) };
 };
 
 export const isRefreshTokenNearExpiry = (session, thresholdMs = 24 * 60 * 60 * 1000) => {

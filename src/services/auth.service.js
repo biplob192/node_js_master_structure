@@ -375,8 +375,8 @@ export const createToken = withTransaction(async (data, session) => {
   }
 
   // Generate new tokens (raw JWTs)
-  const { accessToken, expiresAt: accessExpiresAt } = generateAccessToken({ id: userId, email });
-  const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email });
+  const { accessToken, accessJti, expiresAt: accessExpiresAt } = generateAccessToken({ id: userId, email });
+  const { refreshToken, jti, refreshExpiresAt } = generateRefreshToken({ id: userId, email });
 
   // Encrypt tokens before sending to client
   const encryptedAccess = encryptToken(accessToken);
@@ -388,6 +388,8 @@ export const createToken = withTransaction(async (data, session) => {
     [
       {
         userId,
+        jti,
+        accessJti,
         deviceId,
         deviceInfo,
         accessToken,
@@ -460,14 +462,16 @@ export const refreshTokenService = async (userId, refreshToken, rotateAllTokens 
   if (!session) throw new ApiError(401, "Invalid or expired session");
 
   // Always generate new access token and update session with the token
-  const { accessToken, expiresAt } = generateAccessToken({ id: userId, email: session.email });
+  const { accessToken, jti, expiresAt } = generateAccessToken({ id: userId, email: session.email });
+  session.jti = jti;
   session.accessToken = accessToken;
   session.accessExpiresAt = expiresAt;
 
   // Rotate refresh token too, if requested or if it's close to expiry (e.g., less than 1 day left)
   let newRefreshToken;
   if (rotateAllTokens || isRefreshTokenNearExpiry(session)) {
-    const { refreshToken, refreshExpiresAt } = generateRefreshToken({ id: userId, email: session.email });
+    const { refreshToken, refreshJti, refreshExpiresAt } = generateRefreshToken({ id: userId, email: session.email });
+    session.refreshJti = refreshJti;
     newRefreshToken = refreshToken;
     session.refreshToken = refreshToken;
     session.refreshExpiresAt = refreshExpiresAt;

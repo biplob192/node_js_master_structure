@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 const sessionSchema = new mongoose.Schema({
   userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
   deviceId: { type: String, required: true }, 
+  jti: { type: String },
+  accessJti: { type: String },
   deviceInfo: { type: String },
   accessToken: { type: String, required: true },
   refreshToken: { type: String, required: true },

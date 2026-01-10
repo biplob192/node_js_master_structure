@@ -33,6 +33,9 @@ export const authMiddleware = asyncHandler(async (req, res, next) => {
   // STEP 4 — check if session exists and still valid
   const session = await Session.findOne({ accessToken, valid: true });
 
+  // Find the session by userId, jti, and valid
+  // const session = await Session.findOne({ userId: decoded.id, jti: decoded.jti, valid: true });
+
   if (!session) {
     throw new ApiError(401, "Session expired or logged out");
   }
