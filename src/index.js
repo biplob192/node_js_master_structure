@@ -1,12 +1,14 @@
 // src/index.js (bootstrapper)
 import config from "./config/config.js";
 import connectDB from "./config/db.js";
+import {connectRedis} from "./config/redis.js";
 import app from "./app.js";
 
 // Connect to database before starting server
 const startServer = async () => {
   try {
     await connectDB(); // Wait for DB connection
+    await connectRedis(); // Wait for Redis connection
     app.listen(config.app.port, () => {
       console.log(`Server running at ${config.app.baseUrl}`);
     });

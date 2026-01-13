@@ -3,6 +3,7 @@
 import Otp from "../models/otp.model.js";
 import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
+import redisClient from "../config/redis.js";
 import { verifyUserExistenceService } from "./auth.service.js";
 import { withTransaction } from "../utils/databaseTransaction.js";
 import { generateRandomOtp, sendOtpEmailService, sendOtpSmsService } from "../utils/otp.util.js";
@@ -25,6 +26,11 @@ export const generateOtpService = withTransaction(async (data, session) => {
   // Generate a 6-digit OTP with expiry time from config
   const otp = generateRandomOtp();
   const expiresAt = new Date(Date.now() + config.otp.expiryMs);
+
+  // Store OTP in Redis
+  const key = `otp:${userId}`;
+  await redisClient.setEx(key, 300, otp); // 5 min
+  // await redisClient.set(key, otp, { EX: 300 }); // This is the same as above with pass object as arg
 
   // Store or update existing OTP
   const otpDoc = await Otp.findOneAndUpdate({ userId, purpose }, { otp, expiresAt }, { upsert: true, new: true, session });
