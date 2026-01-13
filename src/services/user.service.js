@@ -8,9 +8,9 @@ export const getUsers = async () => {
   // Better to use a more specific key
   const cacheKey = "users:all";
 
-  // Try Redis cache
+  // Try to fetch from Redis
   const cachedUsers = await redisClient.get(cacheKey);
-
+  
   if (cachedUsers) {
     return JSON.parse(cachedUsers);
   }
@@ -18,11 +18,11 @@ export const getUsers = async () => {
   // Fetch from DB
   const users = await User.find({});
 
-  // Store in Redis (optional TTL: 1 hour)
-  await redisClient.set(cacheKey, JSON.stringify(users), "EX", 60 * 60);
+  // Throw error if not found
+  if (!users) throw new ApiError(404, "Users not found");
 
-  // Store in cache (expire in 5 minutes – adjust as needed)
-  // await redisClient.setEx(cacheKey, 300, JSON.stringify(data));
+  // Store in Redis cache (expire in 5 minutes – adjust as needed)
+  await redisClient.setEx(cacheKey, 300, JSON.stringify(users));
 
   return users;
 };

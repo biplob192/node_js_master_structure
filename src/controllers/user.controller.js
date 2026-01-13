@@ -5,10 +5,10 @@ import { getUsers, getUserProfile } from "../services/user.service.js";
 
 // GET USERS
 export const index = async (req, res, next) => {
+  // Get users data from service
   const data = await getUsers();
 
-  return ApiResponse.fail(res, message, 409);
-  
+  // Return response
   return ApiResponse.success(res, "Users fetched", data);
 };
 
