@@ -8,7 +8,15 @@ import app from "./app.js";
 const startServer = async () => {
   try {
     await connectDB(); // Wait for DB connection
-    await connectRedis(); // Wait for Redis connection
+
+    // Connect to Redis (this will throw an error if Redis is not available and app will not start)
+    // await connectRedis(); // Wait for Redis connection
+    
+    // Try to connect to Redis, but don't fail if it fails (allow the app to start)
+    await connectRedis().catch((err) => {
+      console.warn("Redis is currently unavailable. App will continue without Redis.");
+    });
+
     app.listen(config.app.port, () => {
       console.log(`Server running at ${config.app.baseUrl}`);
     });
