@@ -89,3 +89,6 @@ runSeeder();
 // 7. DatabaseSeeder loops all child seeders → calls run() for each
 //        │
 // 8. Logging → "Seeded X records for Model"
+
+// Active working command
+// npm run seed -- --class=UserSeeder --clean --count=200
