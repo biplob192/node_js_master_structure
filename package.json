@@ -10,7 +10,8 @@
   "scripts": {
     "dev": "nodemon server.js",
     "start": "node server.js",
-    "seed": "node src/database/seed.js"
+    "seed": "node src/database/seed.js",
+    "worker:email": "node src/workers/email.worker.js"
   },
   "keywords": [],
   "author": "",
