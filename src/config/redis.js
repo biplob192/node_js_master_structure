@@ -32,7 +32,8 @@ const redisClient = createClient({
 /* -------------------- Events -------------------- */
 
 redisClient.on("connect", () => {
-  console.log("Redis client created");
+  // console.log("Redis client created");
+  console.log("Redis socket opened (not ready yet)");
 });
 
 redisClient.on("ready", () => {
