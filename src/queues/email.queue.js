@@ -17,3 +17,8 @@ export const emailQueue = new Queue("email-queue", {
     // removeOnFail: { count: 50 }, // keep last 50 failures
   },
 });
+
+
+export function isQueueAvailable() {
+  return connection.status === "ready";
+}
