@@ -39,7 +39,7 @@ export const registerUserWithOtpService = withTransaction(async (data, session) 
 
   // Step 3: Send the OTP email (outside DB transaction — safe)
   // Enable this if you want to send the OTP via email
-  // await sendOtpService({ user, otp });
+  await sendOtpService({ user, otp });
 
   return user;
 });

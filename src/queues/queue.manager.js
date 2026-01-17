@@ -2,10 +2,9 @@
 
 import { Queue } from "bullmq";
 import config from "../config/config.js";
-import { redisClient, redisIsHealthy } from "../config/redis.js";
-// import { sendOtpEmailService } from "../services/otp.service.js";
-import { sendOtpEmailService } from "../utils/otp.util.js";
 import { connection } from "../config/queue.js";
+import { redisIsHealthy } from "../config/redis.js";
+import { sendOtpEmailService } from "../utils/otp.util.js";
 
 class QueueManager {
   constructor() {
@@ -13,18 +12,10 @@ class QueueManager {
   }
 
   getQueue() {
-    console.log("01");
-    console.log(config.redis.enabled);
     if (!config.redis.enabled) return null;
-    console.log("02");
     if (!redisIsHealthy()) return null;
-    console.log("03");
 
     if (!this.emailQueue) {
-      console.log("04");
-      //   this.emailQueue = new Queue("email-queue", {
-      //     connection: redisClient,
-      //   });
       this.emailQueue = new Queue("email-queue", {
         connection,
         defaultJobOptions: {
@@ -48,17 +39,16 @@ class QueueManager {
     const queue = this.getQueue();
 
     if (!queue) {
-        return sendOtpEmailService(data); // fallback
-      console.log("Direct sendOtpEmailService");
+      // Send OTP via Direct Email
+      return sendOtpEmailService(data); // fallback
     }
 
     try {
-      console.log("Inside try.");
-
+      // Send OTP via Queue
       await queue.add("send-otp-email", data);
     } catch {
-      //   return sendOtpEmailService(data); // fallback on failure
-      console.log("Direct sendOtpEmailService");
+      // Send OTP via Direct Email on failure
+      return sendOtpEmailService(data); // fallback on failure
     }
 
     return true;
