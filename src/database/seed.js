@@ -92,3 +92,4 @@ runSeeder();
 
 // Active working command
 // npm run seed -- --class=UserSeeder --clean --count=200
+// node src/database/seed.js --class=UserSeeder --clean --count=50
