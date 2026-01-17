@@ -4,7 +4,8 @@ import Otp from "../models/otp.model.js";
 import config from "../config/config.js";
 import ApiError from "../utils/ApiError.js";
 import redisClient from "../config/redis.js";
-import { emailQueue, isQueueAvailable } from "../queues/email.queue.js";
+// import { emailQueue, isQueueAvailable } from "../queues/email.queue.js";
+import QueueManager from "../queues/queue.manager.js";
 import { verifyUserExistenceService } from "./auth.service.js";
 import { withTransaction } from "../utils/databaseTransaction.js";
 import { generateRandomOtp, sendOtpEmailService, sendOtpSmsService } from "../utils/otp.util.js";
@@ -45,18 +46,25 @@ export const sendOtpService = async (data) => {
   const { user: userData, otp: otpData, viaSms = false } = data;
 
   // Send OTP via email
-  // await sendOtpEmailService({
+  console.log("Inside sendOtpService");
+  await sendOtpEmailService({
+    email: userData.email,
+    otp: otpData.otp,
+    purpose: otpData.purpose,
+  });
+
+  // Send OTP email via queue
+  // await emailQueue.add("send-otp-email", {
   //   email: userData.email,
   //   otp: otpData.otp,
   //   purpose: otpData.purpose,
   // });
 
-  // Send OTP email via queue
-  await emailQueue.add("send-otp-email", {
-    email: userData.email,
-    otp: otpData.otp,
-    purpose: otpData.purpose,
-  });
+  // await QueueManager.sendOtpEmail({
+  //   email: userData.email,
+  //   otp: otpData.otp,
+  //   purpose: otpData.purpose,
+  // });
 
   // Optionally send via SMS
   // if (userData.phone && viaSms)

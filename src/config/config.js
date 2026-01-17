@@ -1,5 +1,7 @@
 // ./config/config.js
 
+import { tr } from "@faker-js/faker";
+
 const config = {
   // Application info
   app: {
@@ -90,6 +92,14 @@ const config = {
     ttl: parseInt(process.env.CACHE_TTL) || 3600, // seconds
     provider: process.env.CACHE_PROVIDER || "memory", // memory | redis
     redisUrl: process.env.REDIS_URL || "redis://localhost:6379",
+  },
+
+  // Redis
+  redis: {
+    enabled: true,
+    // host: process.env.REDIS_HOST || "127.0.0.1",
+    // port: process.env.REDIS_PORT || 6379,
+    // password: process.env.REDIS_PASSWORD || undefined,
   },
 
   // Features / feature flags
