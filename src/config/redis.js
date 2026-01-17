@@ -69,6 +69,12 @@ export async function connectRedis() {
   }
 }
 
+/* -------------------- Helpers -------------------- */
+
+export function redisIsHealthy() {
+  return isRedisAvailable;
+}
+
 /* -------------------- Exports -------------------- */
 
 export default redisClient;
