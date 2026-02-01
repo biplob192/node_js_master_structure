@@ -59,6 +59,68 @@ export const getUsers = async () => {
   return users;
 };
 
+export const getPaginatedUsers = async (query) => {
+  const { page = 1, limit = 10, sort = "-created_at", search, fields, filter = {} } = query;
+
+  const pageNum = Math.max(parseInt(page), 1);
+  const limitNum = Math.min(parseInt(limit), 100);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Base filter
+  const mongoFilter = { ...filter };
+
+  // Search
+  if (search) {
+    mongoFilter.$or = [{ name: { $regex: search, $options: "i" } }, { email: { $regex: search, $options: "i" } }];
+  }
+
+  // Field selection
+  const projection = fields ? fields.split(",").join(" ") : "-password -__v";
+
+  // Cache key (important!)
+  const cacheKey = `users:${JSON.stringify({
+    pageNum,
+    limitNum,
+    sort,
+    search,
+    filter,
+    fields,
+  })}`;
+
+  // Try cache
+  if (isRedisAvailable && redisClient.isOpen) {
+    const cached = await redisClient.get(cacheKey);
+    if (cached) return JSON.parse(cached);
+  }
+
+  // Query
+  const [data, total] = await Promise.all([
+    User.find(mongoFilter).select(projection).sort(sort.split(",").join(" ")).skip(skip).limit(limitNum).lean(),
+    User.countDocuments(mongoFilter),
+  ]);
+
+  if (!data) throw new ApiError(404, "Users not found");
+
+  const result = {
+    data,
+    meta: {
+      total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum),
+      hasNextPage: skip + data.length < total,
+      hasPrevPage: pageNum > 1,
+    },
+  };
+
+  // Cache response
+  if (isRedisAvailable && redisClient.isOpen) {
+    await redisClient.setEx(cacheKey, 300, JSON.stringify(result));
+  }
+
+  return result;
+};
+
 export const getUserProfile = async (userId) => {
   const user = await User.findById(userId).select("-password");
   if (!user) throw new ApiError(404, "User not found");
