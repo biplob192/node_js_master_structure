@@ -1,5 +1,7 @@
 // src/utils/ApiFeatures.js
 
+import { createMongooseTransform } from "./mongooseTransform.util.js";
+
 export default class ApiFeatures {
   constructor(model, queryParams, options = {}) {
     this.model = model;
@@ -70,10 +72,12 @@ export default class ApiFeatures {
     // const [data, total] = await Promise.all([this.query.lean(), this.model.countDocuments(this.filters || {})]);
 
     const finalFilter = this.query.getFilter();
+    const transform = createMongooseTransform(["password"]);
     const [data, total] = await Promise.all([this.query.lean(), this.model.countDocuments(finalFilter)]);
 
     return {
-      data,
+      // data,
+      data: data.map((item) => transform(null, item)),
       meta: {
         total,
         page: this.pagination.page,
